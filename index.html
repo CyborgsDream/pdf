@@ -6,21 +6,16 @@
   <title>PDF Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-gradient: radial-gradient(circle at 20% 20%, rgba(92, 90, 255, 0.18), transparent 32%),
-                     radial-gradient(circle at 80% 10%, rgba(0, 200, 255, 0.14), transparent 32%),
-                     radial-gradient(circle at 50% 80%, rgba(255, 105, 180, 0.12), transparent 36%),
-                     #0c0f17;
-      --card: #101626;
-      --muted: #c8cde5;
-      --primary: #7c5dfa;
-      --primary-strong: #a37bff;
-      --accent: #2de2e6;
-      --border: rgba(255, 255, 255, 0.07);
-      --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-      --glass: rgba(255, 255, 255, 0.04);
+      --bg: #0b0f12;
+      --panel: rgba(255, 255, 255, 0.03);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e6f3ff;
+      --muted: #89a0b0;
+      --glow-cyan: #2de2e6;
+      --glow-green: #a3ff12;
       color-scheme: dark;
     }
 
@@ -30,639 +25,116 @@
 
     body {
       margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg-gradient);
-      color: #f7f8ff;
       min-height: 100vh;
-      padding: 28px;
-    }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 28px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-mark {
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #7c5dfa, #2de2e6);
       display: grid;
       place-items: center;
-      box-shadow: 0 10px 28px rgba(124, 93, 250, 0.35);
-    }
-
-    .brand-mark svg {
-      width: 24px;
-      height: 24px;
-      color: #0c0f17;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 22px;
-      letter-spacing: 0.3px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 18px;
-    }
-
-    .hero-card {
-      background: linear-gradient(145deg, rgba(16, 22, 38, 0.92), rgba(16, 22, 38, 0.75));
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: 24px;
+      background: radial-gradient(circle at 18% 20%, rgba(45, 226, 230, 0.08), transparent 32%),
+                  radial-gradient(circle at 82% 12%, rgba(163, 255, 18, 0.05), transparent 28%),
+                  radial-gradient(circle at 50% 86%, rgba(45, 226, 230, 0.04), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       padding: 24px;
-      position: relative;
-      overflow: hidden;
     }
 
-    .hero-card::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 40% 20%, rgba(124, 93, 250, 0.15), transparent 40%);
-      pointer-events: none;
-    }
-
-    .hero-card h2 {
-      margin: 0 0 10px;
-      font-size: 26px;
-    }
-
-    .hero-card p {
-      margin: 0 0 16px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .chips {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      padding: 8px 12px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      font-size: 13px;
-      color: #e4e8ff;
-      cursor: pointer;
-      transition: all 160ms ease;
-    }
-
-    .chip:hover {
-      transform: translateY(-1px);
-      border-color: rgba(124, 93, 250, 0.6);
-      color: #fff;
-    }
-
-    .prompt-card {
-      background: rgba(15, 19, 30, 0.92);
+    .console {
+      width: min(720px, 100%);
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 22px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-      display: grid;
-      gap: 14px;
+      padding: 20px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(10px);
     }
 
-    .prompt-header {
+    .badge-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .prompt-title {
-      display: flex;
-      align-items: center;
       gap: 10px;
-      font-weight: 600;
+      justify-content: flex-end;
+      margin-bottom: 10px;
     }
 
-    .prompt-title .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      box-shadow: 0 0 0 6px rgba(124, 93, 250, 0.12);
-    }
-
-    .actions-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.04);
+    .glow-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
       display: grid;
       place-items: center;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 140ms ease;
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(45, 226, 230, 0.16), rgba(163, 255, 18, 0.12));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 22px rgba(45, 226, 230, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
-    .icon-btn:hover {
-      color: #fff;
-      border-color: rgba(124, 93, 250, 0.6);
-      transform: translateY(-1px);
-    }
-
-    label {
-      font-size: 12px;
-      letter-spacing: 0.3px;
-      color: var(--muted);
+    .prompt label {
+      display: block;
       text-transform: uppercase;
+      letter-spacing: 0.28px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
     }
 
-    .prompt-input {
+    .input-wrap {
       position: relative;
     }
 
-    .prompt-input textarea {
+    textarea {
       width: 100%;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      color: #f6f8ff;
-      padding: 14px 52px 14px 14px;
+      border-radius: 18px;
+      color: var(--text);
+      padding: 16px 60px 16px 16px;
       font-size: 15px;
       line-height: 1.6;
-      min-height: 110px;
-      outline: none;
+      min-height: 140px;
       resize: vertical;
-      transition: border-color 120ms ease, box-shadow 120ms ease;
+      outline: none;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
     }
 
-    .prompt-input textarea:focus {
-      border-color: rgba(124, 93, 250, 0.6);
-      box-shadow: 0 0 0 4px rgba(124, 93, 250, 0.12);
+    textarea:focus {
+      border-color: rgba(45, 226, 230, 0.6);
+      box-shadow: 0 0 0 6px rgba(45, 226, 230, 0.12);
     }
 
-    .send-btn {
+    .send {
       position: absolute;
       right: 10px;
       bottom: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
       border: none;
-      color: #0c0f17;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 700;
+      background: linear-gradient(135deg, var(--glow-cyan), var(--glow-green));
+      color: #0b0f12;
+      font-weight: 800;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 14px 24px rgba(124, 93, 250, 0.35);
+      box-shadow: 0 10px 24px rgba(45, 226, 230, 0.35);
       transition: transform 120ms ease, box-shadow 120ms ease;
     }
 
-    .send-btn:hover {
+    .send:hover {
       transform: translateY(-1px) scale(1.01);
-      box-shadow: 0 18px 32px rgba(124, 93, 250, 0.45);
-    }
-
-    .toggle-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.04);
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .toggle .switch {
-      width: 32px;
-      height: 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(124, 93, 250, 0.35);
-      position: relative;
-    }
-
-    .toggle .switch::after {
-      content: '';
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      background: #fff;
-      border-radius: 50%;
-      top: 1px;
-      right: 2px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
-      display: grid;
-      gap: 10px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 120ms ease, border-color 120ms ease;
-    }
-
-    .card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(124, 93, 250, 0.6);
-    }
-
-    .card .icon-circle {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      background: rgba(124, 93, 250, 0.18);
-      color: #fff;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-
-    .card h3 {
-      margin: 0;
-      font-size: 17px;
-    }
-
-    .card p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 14px;
-    }
-
-    .card .cta {
-      color: var(--primary-strong);
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-    }
-
-    .section-title {
-      margin: 20px 0 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .section-title h4 {
-      margin: 0;
-      letter-spacing: 0.3px;
-      color: #e3e6ff;
-    }
-
-    .fast-access {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .fast-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.04);
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 120ms ease;
-    }
-
-    .fast-item:hover {
-      border-color: rgba(124, 93, 250, 0.6);
-      transform: translateY(-2px);
-    }
-
-    .recent-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .recent-item {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .recent-meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .badge {
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: rgba(45, 226, 230, 0.14);
-      color: #c3f5ff;
-      border: 1px solid rgba(45, 226, 230, 0.35);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-    }
-
-    .recent-item small {
-      color: var(--muted);
-    }
-
-    @media (max-width: 720px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .recent-item {
-        grid-template-columns: 1fr;
-        align-items: flex-start;
-      }
+      box-shadow: 0 14px 32px rgba(45, 226, 230, 0.45);
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header>
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 3h7l7 7v11H5V3Z" />
-            <path d="M12 3v7h7" />
-          </svg>
-        </div>
-        <div>
-          <h1>PDF Studio</h1>
-          <div class="pill">AI powered workspace for anything PDF</div>
-        </div>
-      </div>
-      <div class="fast-access" aria-label="Fast access">
-        <div class="fast-item">
-          <span>➕</span>
-          <span>New project</span>
-        </div>
-        <div class="fast-item">
-          <span>📂</span>
-          <span>Open file</span>
-        </div>
-        <div class="fast-item">
-          <span>⚡</span>
-          <span>Quick merge</span>
-        </div>
-        <div class="fast-item">
-          <span>⭐</span>
-          <span>Favorites</span>
-        </div>
-      </div>
-    </header>
-
-    <div class="hero">
-      <div class="hero-card">
-        <h2>Tell us what to build</h2>
-        <p>Use natural language to combine, clean, annotate, and deliver polished PDFs. The co-pilot understands actions, not just prompts.</p>
-        <div class="chips" aria-label="Prompt ideas">
-          <div class="chip">Generate a fillable form</div>
-          <div class="chip">Summarize my research bundle</div>
-          <div class="chip">Sign and lock the pages</div>
-          <div class="chip">Extract tables into CSV</div>
-        </div>
-      </div>
-
-      <div class="prompt-card" aria-label="Prompt entry">
-        <div class="prompt-header">
-          <div class="prompt-title">
-            <span class="dot" aria-hidden="true"></span>
-            <span>Prompt entry</span>
-          </div>
-          <div class="actions-row">
-            <button class="icon-btn" aria-label="Microphone">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                <path d="M19 10a7 7 0 0 1-14 0" />
-                <path d="M12 17v5" />
-                <path d="M8 22h8" />
-              </svg>
-            </button>
-            <button class="icon-btn" aria-label="History">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 3v5h5" />
-                <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
-                <path d="M12 7v5l4 2" />
-              </svg>
-            </button>
-            <button class="icon-btn" aria-label="Settings">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.42 1.24 1.04 1.51.19.08.4.12.61.12H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="prompt-input">
-          <label for="prompt">Describe your next PDF move</label>
-          <textarea id="prompt" name="prompt" placeholder="Example: Merge invoice-2024.pdf with terms.pdf, then add my signature on the last page and export a share link"></textarea>
-          <button class="send-btn" aria-label="Send prompt">
-            <span>Launch</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle">
-            <div class="switch" aria-hidden="true"></div>
-            <span>Auto-save to cloud</span>
-          </div>
-          <div class="toggle">
-            <div class="switch" aria-hidden="true"></div>
-            <span>Suggest templates</span>
-          </div>
-        </div>
+  <main class="console" aria-label="PDF prompt console">
+    <div class="badge-row" aria-hidden="true">
+      <div class="glow-icon">🎛️</div>
+      <div class="glow-icon">🎙️</div>
+      <div class="glow-icon">⚡</div>
+    </div>
+    <div class="prompt">
+      <label for="prompt">Prompt</label>
+      <div class="input-wrap">
+        <textarea id="prompt" name="prompt" placeholder="Describe what you want to do with your PDF..." aria-label="PDF prompt input"></textarea>
+        <button class="send" aria-label="Send prompt">➜</button>
       </div>
     </div>
-
-    <div class="section-title">
-      <h4>Main options</h4>
-      <div class="pill">Fast access icons for everyday tools</div>
-    </div>
-    <div class="grid" aria-label="Main options">
-      <div class="card">
-        <div class="icon-circle" aria-hidden="true">🧩</div>
-        <h3>Merge &amp; organize</h3>
-        <p>Combine files, reorder pages, and clean layouts in seconds with smart suggestions.</p>
-        <span class="cta">Start merge →</span>
-      </div>
-      <div class="card">
-        <div class="icon-circle" aria-hidden="true">🖊️</div>
-        <h3>Annotate &amp; sign</h3>
-        <p>Drop comments, highlight research, and insert legally binding signatures.</p>
-        <span class="cta">Open canvas →</span>
-      </div>
-      <div class="card">
-        <div class="icon-circle" aria-hidden="true">📄</div>
-        <h3>Generate forms</h3>
-        <p>Draft fillable forms with validation, smart labels, and ready-to-send styling.</p>
-        <span class="cta">New form →</span>
-      </div>
-      <div class="card">
-        <div class="icon-circle" aria-hidden="true">📊</div>
-        <h3>Extract &amp; export</h3>
-        <p>Turn tables into CSV, summarize long reports, or publish branded exports.</p>
-        <span class="cta">Export data →</span>
-      </div>
-    </div>
-
-    <div class="section-title">
-      <h4>Recent projects</h4>
-      <div class="pill">Quick jump into what you touched last</div>
-    </div>
-    <div class="recent-list" aria-label="Recent projects">
-      <div class="recent-item">
-        <div class="recent-meta">
-          <div class="icon-circle" aria-hidden="true">📑</div>
-          <div>
-            <strong>Q2 Board Pack</strong><br />
-            <small>Updated 12 minutes ago · 18 pages</small>
-          </div>
-        </div>
-        <div class="actions-row">
-          <div class="badge">In review</div>
-          <button class="icon-btn" aria-label="Share project">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <path d="m8.59 13.51 6.83 3.98" />
-              <path d="m15.41 6.51-6.82 3.98" />
-            </svg>
-          </button>
-          <button class="icon-btn" aria-label="Open project">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 3h11v11" />
-              <path d="M9 15 3 9" />
-              <path d="m15 9-6 6" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="recent-item">
-        <div class="recent-meta">
-          <div class="icon-circle" aria-hidden="true">✒️</div>
-          <div>
-            <strong>Client Contract - Nova Labs</strong><br />
-            <small>Yesterday · Signed &amp; sealed</small>
-          </div>
-        </div>
-        <div class="actions-row">
-          <div class="badge" style="background: rgba(124, 93, 250, 0.2); border-color: rgba(124, 93, 250, 0.4); color: #ede4ff;">Signed</div>
-          <button class="icon-btn" aria-label="Download PDF">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" x2="12" y1="15" y2="3" />
-            </svg>
-          </button>
-          <button class="icon-btn" aria-label="Resume editing">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" />
-              <path d="M13 2v7h7" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="recent-item">
-        <div class="recent-meta">
-          <div class="icon-circle" aria-hidden="true">📊</div>
-          <div>
-            <strong>Research Dataset Export</strong><br />
-            <small>2 days ago · 3 exports</small>
-          </div>
-        </div>
-        <div class="actions-row">
-          <div class="badge" style="background: rgba(0, 200, 255, 0.15); border-color: rgba(0, 200, 255, 0.45); color: #d3f4ff;">Ready</div>
-          <button class="icon-btn" aria-label="Open dashboard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3h18v18H3z" />
-              <path d="M9 3v18" />
-              <path d="M3 9h18" />
-              <path d="M15 9v12" />
-              <path d="M3 15h18" />
-            </svg>
-          </button>
-          <button class="icon-btn" aria-label="Share dashboard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <path d="m8.59 13.51 6.83 3.98" />
-              <path d="m15.41 6.51-6.82 3.98" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </main>
 </body>
 </html>
