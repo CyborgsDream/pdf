@@ -1,140 +1,207 @@
+<!--
+ * @version   v1.9.1
+ * @codename  "ZoomWin"
+ * @author    Prof. Adrian Zephyr
+ * @date      2025-08-12
+ * @log       Add 3D zoom animations for windows
+ * @changelog
+ *   - [2025-08-12] Implemented 3D open/close zoom effects.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDF Studio</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0b0f12;
-      --panel: rgba(255, 255, 255, 0.03);
-      --border: rgba(255, 255, 255, 0.08);
-      --text: #e6f3ff;
-      --muted: #89a0b0;
-      --glow-cyan: #2de2e6;
-      --glow-green: #a3ff12;
-      color-scheme: dark;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit OS v 0.1.3</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+    <style>
+        /* Core reset & fonts */
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'VT323',monospace}
+        html,body{height:100%}
+        body{
+            background:#005;min-height:calc(var(--vh,1vh)*100);overflow:hidden;display:flex;justify-content:center;align-items:center;color:#fff
+        }
 
-    * {
-      box-sizing: border-box;
-    }
+        /* Desktop container */
+        .desktop{width:100vw;height:calc(var(--vh,1vh)*100);background:#0055aa;position:relative;overflow:hidden;box-shadow:0 0 30px rgba(0,100,255,0.5);border:2px solid #00aaff}
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: radial-gradient(circle at 18% 20%, rgba(45, 226, 230, 0.08), transparent 32%),
-                  radial-gradient(circle at 82% 12%, rgba(163, 255, 18, 0.05), transparent 28%),
-                  radial-gradient(circle at 50% 86%, rgba(45, 226, 230, 0.04), transparent 30%),
-                  var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      padding: 24px;
-    }
+        /* CRT scanlines */
+        .desktop::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:100}
+        .desktop::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 20px rgba(0,0,0,0.7);pointer-events:none;z-index:101;border-radius:5px}
 
-    .console {
-      width: min(720px, 100%);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 20px;
-      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-      backdrop-filter: blur(10px);
-    }
+        .menu-bar{height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-bottom:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;position:relative;z-index:10}
+        .menu-item{margin-right:15px;cursor:pointer;text-shadow:1px 1px 1px #000;padding:0 5px}
+        .menu-item:hover{background:rgba(255,255,255,0.2)}
+        .dropdown{position:absolute;top:24px;left:0;background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;margin:0;min-width:180px;display:none;z-index:100}
+        .dropdown-item{padding:5px 10px;cursor:pointer;border-bottom:1px solid #999}
+        .dropdown-item:hover{background:rgba(0,0,255,0.4);color:#fff}
+        .clock{margin-left:auto;text-shadow:1px 1px 1px #000;font-size:18px}
 
-    .badge-row {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-bottom: 10px;
-    }
+        /* Window styles */
+        .window{position:absolute;background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;border-top-color:#fff;border-left-color:#fff;border-right-color:#555;border-bottom-color:#555;box-shadow:5px 5px 10px rgba(0,0,0,0.5);min-width:300px;min-height:200px;z-index:5;display:flex;flex-direction:column;resize:both;overflow:hidden;transform-style:preserve-3d;transition:transform .3s ease,opacity .3s ease}
+        .window.zoom-init,.window.zoom-out{transform:perspective(800px) translateZ(-400px) scale(.8);opacity:0}
+        .window-header{height:24px;background:linear-gradient(to right,#0000aa,#000088);color:white;display:flex;align-items:center;padding:0 5px;cursor:move;font-size:18px}
+        .window-title{flex:1;text-shadow:1px 1px 1px #000}
+        .window-controls{display:flex;gap:5px}
+        .window-btn{width:18px;height:18px;display:flex;justify-content:center;align-items:center;background:linear-gradient(to bottom,#c0c0c0,#a0a0a0);border:1px solid;border-top-color:#fff;border-left-color:#fff;border-right-color:#555;border-bottom-color:#555;cursor:pointer;font-size:14px;line-height:1}
+        .window-btn:active{border-top-color:#555;border-left-color:#555;border-right-color:#fff;border-bottom-color:#fff}
+        .window-content{padding:10px;flex:1;overflow:auto;color:#000;font-size:18px;line-height:1.4;background:#c0c0c0;position:relative}
 
-    .glow-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      color: var(--text);
-      background: linear-gradient(135deg, rgba(45, 226, 230, 0.16), rgba(163, 255, 18, 0.12));
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 0 22px rgba(45, 226, 230, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
+        /* Loaders */
+        .loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;color:#fff;z-index:5;font-family:'IBM Plex Mono', 'Courier New', monospace;letter-spacing:.08em}
 
-    .prompt label {
-      display: block;
-      text-transform: uppercase;
-      letter-spacing: 0.28px;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
+        .boot-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,rgba(0,30,120,.92),rgba(0,0,0,.95));z-index:2000;transition:opacity .35s ease;--boot-progress:0}
+        .boot-loader.boot-loader--hidden{opacity:0;pointer-events:none}
+        .zx-loader{width:min(360px,80%);border:4px solid #fff;box-shadow:0 0 0 4px #00a8f0 inset,0 0 0 8px #000,0 0 32px rgba(0,168,240,.55);padding:18px 16px 22px;background:#000;display:flex;flex-direction:column;gap:18px}
+        .zx-loader-title{text-align:center;font-size:.95rem;color:#ffe600}
+        .zx-loader-bar{position:relative;height:26px;border:3px solid #fff;padding:2px;overflow:hidden;background:#000}
+        .zx-loader-fill{position:absolute;inset:2px;background:repeating-linear-gradient(90deg,#ff004d 0 18px,#ffe600 18px 36px,#00b543 36px 54px,#0099ff 54px 72px,#7d00ff 72px 90px,#ff7800 90px 108px);transform-origin:left center;animation:zx-progress 2.8s steps(28) infinite}
+        .zx-loader-glow{position:absolute;inset:0;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 2px,transparent 2px 4px);opacity:.35;animation:zx-scan .45s steps(3) infinite}
+        .zx-loader-status{text-align:center;font-size:.8rem;color:#00f0ff;animation:zx-blink 1.2s steps(2) infinite}
+        @keyframes zx-progress{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+        @keyframes zx-scan{0%{opacity:.25}50%{opacity:.55}100%{opacity:.25}}@keyframes zx-blink{0%,100%{opacity:1}50%{opacity:.4}}
 
-    .input-wrap {
-      position: relative;
-    }
+        /* Terminal styles */
+        .terminal{display:flex;flex-direction:column;height:100%;background:radial-gradient(circle at top,#0a0a0a,#020202 70%);border:2px solid #0f0;border-radius:6px;box-shadow:inset 0 0 12px rgba(0,255,170,.25);font-family:'VT323',monospace;color:#0f0}
+        .terminal-screen{flex:1;overflow:auto;padding:10px;outline:none}
 
-    textarea {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      color: var(--text);
-      padding: 16px 60px 16px 16px;
-      font-size: 15px;
-      line-height: 1.6;
-      min-height: 140px;
-      resize: vertical;
-      outline: none;
-      transition: border-color 140ms ease, box-shadow 140ms ease;
-    }
+        /* Wallpaper and bars */
+        .wallpaper{position:absolute;top:24px;left:0;right:0;bottom:24px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230055aa"/><path d="M0,0 L100,100 M100,0 L0,100" stroke="%230077cc" stroke-width="0.5"/></svg>');opacity:.2;z-index:1;pointer-events:none}
+        .status-bar{position:absolute;bottom:24px;left:0;right:0;height:20px;background:rgba(0,0,0,.3);color:#fff;font-size:14px;padding:0 10px;display:flex;align-items:center;z-index:2}
+        .task-bar{position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-top:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;z-index:10}
 
-    textarea:focus {
-      border-color: rgba(45, 226, 230, 0.6);
-      box-shadow: 0 0 0 6px rgba(45, 226, 230, 0.12);
-    }
+        /* Dialog */
+        .dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;border-top-color:#fff;border-left-color:#fff;border-right-color:#555;border-bottom-color:#555;min-width:300px;z-index:20;box-shadow:5px 5px 15px rgba(0,0,0,.7)}
+        .dialog-content{padding:20px;text-align:center}
 
-    .send {
-      position: absolute;
-      right: 10px;
-      bottom: 10px;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      border: none;
-      background: linear-gradient(135deg, var(--glow-cyan), var(--glow-green));
-      color: #0b0f12;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 10px 24px rgba(45, 226, 230, 0.35);
-      transition: transform 120ms ease, box-shadow 120ms ease;
-    }
-
-    .send:hover {
-      transform: translateY(-1px) scale(1.01);
-      box-shadow: 0 14px 32px rgba(45, 226, 230, 0.45);
-    }
-  </style>
+        /* Small responsivity tweaks */
+        @media (max-width:640px){.window{min-width:240px}.zx-loader{width:90%}}
+    </style>
+    <link id="theme-link" rel="stylesheet">
 </head>
 <body>
-  <main class="console" aria-label="PDF prompt console">
-    <div class="badge-row" aria-hidden="true">
-      <div class="glow-icon">🎛️</div>
-      <div class="glow-icon">🎙️</div>
-      <div class="glow-icon">⚡</div>
+    <div class="boot-loader" id="boot-loader" role="alert" aria-live="assertive">
+        <div class="zx-loader">
+            <div class="zx-loader-title" id="boot-title">Orbit OS is booting…</div>
+            <div class="zx-loader-bar">
+                <div class="zx-loader-fill"></div>
+                <div class="zx-loader-glow"></div>
+            </div>
+            <div class="zx-loader-status" id="boot-status">Initializing subsystems…</div>
+        </div>
     </div>
-    <div class="prompt">
-      <label for="prompt">Prompt</label>
-      <div class="input-wrap">
-        <textarea id="prompt" name="prompt" placeholder="Describe what you want to do with your PDF..." aria-label="PDF prompt input"></textarea>
-        <button class="send" aria-label="Send prompt">➜</button>
-      </div>
+    <div class="desktop" id="desktop">
+        <!-- Retro wallpaper (click-through) -->
+        <div class="wallpaper"></div>
+
+        <!-- Menu bar -->
+        <div class="menu-bar" id="menu-bar">
+            <div class="clock" id="clock">12:00:00 PM</div>
+        </div>
+
+        <!-- Storage indicator -->
+        <div class="disk-drive">
+            <div>Storage:</div>
+            <div class="drive-slot">
+                <div class="drive-light"></div>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="status-bar" id="status-bar"></div>
+
+        <!-- Task bar -->
+        <div class="task-bar" id="task-bar"></div>
+        <div class="taskbar-menu" id="taskbar-menu" style="display:none;"></div>
+
+        <!-- Welcome dialog -->
+        <div class="dialog" id="welcome-dialog" style="display:none;">
+            <div class="window-header">
+                <div class="window-title"></div>
+            </div>
+            <div class="dialog-content"></div>
+        </div>
     </div>
-  </main>
+
+    <script>
+        // Lightweight, optimized version of Orbit OS main script with icons removed
+        const state = { windows: [], zIndex: 5, windowCount: 0, puzzleState: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0] };
+        const desktop = document.getElementById('desktop');
+        const bootLoader = document.getElementById('boot-loader');
+        const bootStatus = document.getElementById('boot-status');
+        const defaultBootStatus = 'Initializing subsystems…';
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+        const ORBIT_VERSION = '0.1.3'; window.ORBIT_VERSION = ORBIT_VERSION;
+
+        function setBootProgress(value, status){ if(!bootLoader) return; const clamped = Math.max(0,Math.min(1,value)); bootLoader.style.setProperty('--boot-progress', clamped); if(status) bootStatus.textContent = status }
+        function showBootLoader(status){ if(!bootLoader) return; bootLoader.style.display='flex'; void bootLoader.offsetWidth; bootLoader.classList.remove('boot-loader--hidden'); bootLoader.setAttribute('aria-hidden','false'); if(status) bootStatus.textContent = status }
+        function hideBootLoader(){ if(!bootLoader) return Promise.resolve(); if(bootLoader.classList.contains('boot-loader--hidden')){ bootLoader.style.display='none'; bootLoader.style.setProperty('--boot-progress',0); bootStatus.textContent = defaultBootStatus; bootLoader.setAttribute('aria-hidden','true'); return Promise.resolve() } bootLoader.classList.add('boot-loader--hidden'); bootLoader.setAttribute('aria-hidden','true'); return new Promise(resolve=>{ const finish=()=>{ bootLoader.style.display='none'; bootLoader.removeEventListener('transitionend',onTransitionEnd); bootLoader.style.setProperty('--boot-progress',0); bootStatus.textContent=defaultBootStatus; resolve() }; const onTransitionEnd=(e)=>{ if(e.target===bootLoader && e.propertyName==='opacity') finish() }; bootLoader.addEventListener('transitionend', onTransitionEnd); setTimeout(finish,500) }) }
+
+        async function runBootLoaderDemo(){ if(!bootLoader) return; showBootLoader('Demonstrating Orbit OS loader…'); setBootProgress(0); const demoSteps=[{progress:.2,status:'Spinning up demo drives…',delay:380},{progress:.45,status:'Syncing color palettes…',delay:420},{progress:.7,status:'Preparing creative workspace…',delay:520},{progress:1,status:'Demo complete!',delay:620}]; for(const step of demoSteps){ await delay(step.delay); setBootProgress(step.progress, step.status) } await delay(520); await hideBootLoader() }
+
+        function setTheme(theme){ const link = document.getElementById('theme-link'); if(theme==='retro'){ link.removeAttribute('href') } else { link.setAttribute('href', `app-css/${theme}.css`) } localStorage.setItem('theme', theme) }
+
+        function buildMenus(menus){ const bar = document.getElementById('menu-bar'); const clock = document.getElementById('clock'); bar.innerHTML=''; menus.forEach(menu=>{ const item=document.createElement('div'); item.className='menu-item'; item.textContent=menu.label; const dropdown=document.createElement('div'); dropdown.className='dropdown'; menu.items.forEach(entry=>{ const div=document.createElement('div'); div.className='dropdown-item'; div.textContent=entry.label; if(entry.action==='set-theme' && entry.theme) div.addEventListener('click', ()=>{ setTheme(entry.theme); dropdown.style.display='none' }); else if(entry.action==='show-boot-loader') div.addEventListener('click', ()=>{ runBootLoaderDemo(); dropdown.style.display='none' }); else if(entry.type) div.addEventListener('click', ()=>{ openWindow(entry.type); dropdown.style.display='none' }); dropdown.appendChild(div) }); item.appendChild(dropdown); bar.appendChild(item) }); bar.appendChild(clock) }
+
+        // removed icon-building code to keep the page lean (icons disabled)
+
+        function saveWindowState(type, el){ if(!type) return; const windowStates = JSON.parse(localStorage.getItem('windowStates')||'{}'); windowStates[type] = { top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight }; localStorage.setItem('windowStates', JSON.stringify(windowStates)) }
+
+        function getWindowConfig(type){ if(!window.ORBIT_MANIFEST) return null; const now = new Date(); const cfg = window.ORBIT_MANIFEST.windows[type]; if(!cfg) return null; let content = cfg.content.replace(/\{DATE\}/g, now.toLocaleDateString()).replace(/\{TIME\}/g, now.toLocaleTimeString()).replace(/\{MONTH_YEAR\}/g, now.toLocaleString('default',{month:'long',year:'numeric'})); return { title: cfg.title, content, width: cfg.width, height: cfg.height } }
+
+        function openWindow(type){ const windowConfig = getWindowConfig(type); if(!windowConfig) return; let winWidth = windowConfig.width, winHeight = windowConfig.height; if(window.innerWidth < winWidth) winWidth = window.innerWidth - 20; if(window.innerHeight < winHeight) winHeight = window.innerHeight - 40; const id = `window-${++state.windowCount}`; state.zIndex++; let top = 50 + state.windowCount*20; let left = 50 + state.windowCount*20; const viewportWidth = window.innerWidth || 1280; const viewportHeight = window.innerHeight || 720; const margin = 20; const availableWidth = Math.max(viewportWidth - margin*2, 0); const availableHeight = Math.max(viewportHeight - margin*2, 0); const minWidth = Math.min(320, Math.max(240, viewportWidth - margin)); const minHeight = Math.min(220, Math.max(200, viewportHeight - margin)); winWidth = Math.max(Math.min(winWidth, availableWidth), minWidth); winHeight = Math.max(Math.min(winHeight, availableHeight), minHeight); const maxLeft = Math.max(margin, viewportWidth - winWidth - margin); const maxTop = Math.max(margin, viewportHeight - winHeight - margin); top = Math.max(margin, Math.min(top, maxTop)); left = Math.max(margin, Math.min(left, maxLeft)); const windowHtml = `
+                <div class="window" id="${id}" data-window-type="${type}"
+                     style="top: ${top}px; left: ${left}px; width: ${winWidth}px; height: ${winHeight}px; z-index: ${state.zIndex}">
+                    <div class="window-header">
+                        <div class="window-title">${windowConfig.title}</div>
+                        <div class="window-controls">
+                            <div class="window-btn" onclick="minimizeWindow('${id}')">_</div>
+                            <div class="window-btn" onclick="maximizeWindow('${id}')">□</div>
+                            <div class="window-btn" onclick="closeWindow('${id}')">×</div>
+                        </div>
+                    </div>
+                    <div class="window-content">
+                        ${windowConfig.content}
+                    </div>
+                </div>
+            `;
+            desktop.insertAdjacentHTML('beforeend', windowHtml);
+            const winEl = document.getElementById(id);
+            winEl.classList.add('zoom-init');
+            winEl.dataset.minimized = 'false';
+            requestAnimationFrame(()=>winEl.classList.remove('zoom-init'));
+            makeDraggable(id);
+            state.windows.push(id);
+            updateTaskBar();
+            saveWindowState(type, winEl);
+            return id;
+        }
+
+        function closeWindow(id){ const win = document.getElementById(id); if(!win) return; state.windows = state.windows.filter(w=>w!==id); updateTaskBar(); if(!win.classList.contains('zoom-out')) win.classList.add('zoom-out'); const finish=()=>{ if(win.isConnected) win.remove(); }; setTimeout(finish, 350) }
+
+        function minimizeWindow(id){ const win = document.getElementById(id); if(win){ win.style.display='none'; win.dataset.minimized='true'; updateTaskBar(); } }
+
+        function maximizeWindow(id){ const win = document.getElementById(id); if(!win) return; if(win.dataset.maximized==='true'){ win.style.width = win.dataset.initWidth + 'px'; win.style.height = win.dataset.initHeight + 'px'; win.style.top = win.dataset.initTop + 'px'; win.style.left = win.dataset.initLeft + 'px'; win.dataset.maximized='false'; } else { win.dataset.initWidth = win.offsetWidth; win.dataset.initHeight = win.offsetHeight; win.dataset.initTop = win.offsetTop; win.dataset.initLeft = win.offsetLeft; win.style.width='95%'; win.style.height='85%'; win.style.top='30px'; win.style.left='10px'; win.dataset.maximized='true'; } win.dataset.minimized='false'; win.style.zIndex = ++state.zIndex; updateTaskBar(); saveWindowState(win.dataset.windowType, win); }
+
+        function makeDraggable(windowId){ const win = document.getElementById(windowId); const header = win.querySelector('.window-header'); let pos1=0,pos2=0,pos3=0,pos4=0; header.style.touchAction='none'; header.onpointerdown = dragPointerDown; function dragPointerDown(e){ e.preventDefault(); pos3=e.clientX; pos4=e.clientY; document.onpointerup = closeDragElement; document.onpointermove = elementDrag; win.style.zIndex = ++state.zIndex } function elementDrag(e){ e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; win.style.top = (win.offsetTop - pos2) + 'px'; win.style.left = (win.offsetLeft - pos1) + 'px' } function closeDragElement(){ document.onpointerup=null; document.onpointermove=null; saveWindowState(win.dataset.windowType, win) } }
+
+        function updateTaskBar(){ const bar = document.getElementById('task-bar'); bar.innerHTML=''; state.windows.forEach(id=>{ const win = document.getElementById(id); if(!win) return; const btn = document.createElement('div'); btn.className='task-btn'; const isMin = win.style.display==='none' || win.dataset.minimized==='true'; if(!isMin) btn.classList.add('active'); btn.textContent = win.querySelector('.window-title').textContent; btn.onclick = ()=>{ const minimized = win.style.display==='none' || win.dataset.minimized==='true'; if(minimized){ win.style.display='flex'; win.dataset.minimized='false'; win.style.zIndex = ++state.zIndex; saveWindowState(win.dataset.windowType, win) } else { minimizeWindow(id) } updateTaskBar() }; bar.appendChild(btn) }) }
+
+        function initMenus(){ const items = document.querySelectorAll('.menu-item'); items.forEach(item=>{ const dropdown = item.querySelector('.dropdown'); if(dropdown){ item.addEventListener('click', ()=>{ document.querySelectorAll('.dropdown').forEach(d=>{ if(d!==dropdown) d.style.display='none' }); dropdown.style.display = dropdown.style.display==='block' ? 'none' : 'block' }) } }); document.addEventListener('click', (e)=>{ if(!e.target.closest('.menu-item')) document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none') }) }
+
+        function initTaskBarMenu(){ const bar = document.getElementById('task-bar'); const menu = document.getElementById('taskbar-menu'); menu.innerHTML=''; const pin = document.createElement('div'); pin.textContent='Pin Mini App'; pin.onclick = ()=>{ openWindow('mini-app'); menu.style.display='none' }; menu.appendChild(pin); bar.addEventListener('contextmenu', e=>{ e.preventDefault(); menu.style.left = e.clientX + 'px'; menu.style.display='block' }); document.addEventListener('click', ()=>{ menu.style.display='none' }) }
+
+        // Minimal app manifest loader
+        async function init(){ showBootLoader('Initializing video BIOS…'); setBootProgress(0.08,'Initializing video BIOS…'); setTheme('retro'); setBootProgress(0.18,'Calibrating color palette…'); try{ const res = await fetch('app-data/app1.json'); const appData = await res.json(); window.ORBIT_MANIFEST = appData; document.getElementById('status-bar').textContent = appData.status || ''; buildMenus(appData.menus || []); initMenus(); initTaskBarMenu(); setBootProgress(0.9,'Starting essential services…'); await delay(220); setBootProgress(1,'Orbit OS ready!'); await delay(280); await hideBootLoader(); if(appData.welcome) buildWelcome(appData.welcome); openWindow('console-log'); }catch(err){ console.error('Failed to initialize app data', err); await hideBootLoader(); document.getElementById('status-bar').textContent = 'Failed to load system manifest'; } }
+
+        function buildWelcome(welcome){ if(!welcome) return; const dialog = document.getElementById('welcome-dialog'); dialog.querySelector('.window-title').textContent = welcome.title || ''; const content = dialog.querySelector('.dialog-content'); content.innerHTML = (welcome.lines||[]).map(l=>`<p>${l}</p>`).join(''); const buttons = document.createElement('div'); buttons.className='dialog-buttons'; const btn = document.createElement('div'); btn.className='dialog-btn'; btn.textContent = welcome.button || 'Close'; btn.onclick = ()=>closeDialog('welcome-dialog'); buttons.appendChild(btn); content.appendChild(buttons); dialog.style.display='block' }
+
+        function closeDialog(id){ const el = document.getElementById(id); if(el) el.style.display='none' }
+
+        function updateViewportHeight(){ document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`) }
+        window.addEventListener('resize', updateViewportHeight); window.addEventListener('orientationchange', updateViewportHeight); updateViewportHeight(); window.onload = init;
+    </script>
+    <script src="app-js/gui-api.js"></script>
 </body>
 </html>
