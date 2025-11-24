@@ -165,7 +165,7 @@
 
         async function runBootLoaderDemo(){ if(!bootLoader) return; showBootLoader('Demonstrating Orbit OS loader…'); setBootProgress(0); const demoSteps=[{progress:.2,status:'Spinning up demo drives…',delay:380},{progress:.45,status:'Syncing color palettes…',delay:420},{progress:.7,status:'Preparing creative workspace…',delay:520},{progress:1,status:'Demo complete!',delay:620}]; for(const step of demoSteps){ await delay(step.delay); setBootProgress(step.progress, step.status) } await delay(520); await hideBootLoader() }
 
-        function setTheme(theme){ const link = document.getElementById('theme-link'); if(theme==='retro'){ link.removeAttribute('href') } else { link.setAttribute('href', `app-css/${theme}.css`) } localStorage.setItem('theme', theme) }
+        function setTheme(theme){ const link = document.getElementById('theme-link'); if(theme==='retro'){ link.removeAttribute('href') } else { link.setAttribute('href', `./app-css/${theme}.css`) } localStorage.setItem('theme', theme) }
 
         function buildMenus(menus){ const bar = document.getElementById('menu-bar'); const clock = document.getElementById('clock'); bar.innerHTML=''; menus.forEach(menu=>{ const item=document.createElement('div'); item.className='menu-item'; item.textContent=menu.label; const dropdown=document.createElement('div'); dropdown.className='dropdown'; menu.items.forEach(entry=>{ const div=document.createElement('div'); div.className='dropdown-item'; div.textContent=entry.label; if(entry.action==='set-theme' && entry.theme) div.addEventListener('click', ()=>{ setTheme(entry.theme); dropdown.style.display='none' }); else if(entry.action==='show-boot-loader') div.addEventListener('click', ()=>{ runBootLoaderDemo(); dropdown.style.display='none' }); else if(entry.type) div.addEventListener('click', ()=>{ openWindow(entry.type); dropdown.style.display='none' }); dropdown.appendChild(div) }); item.appendChild(dropdown); bar.appendChild(item) }); bar.appendChild(clock) }
 
@@ -251,7 +251,25 @@
         });
 
         // Minimal app manifest loader
-        async function init(){ showBootLoader('Initializing video BIOS…'); setBootProgress(0.08,'Initializing video BIOS…'); setTheme('retro'); setBootProgress(0.18,'Calibrating color palette…'); try{ const res = await fetch('app-data/app1.json'); const appData = await res.json(); window.ORBIT_MANIFEST = appData; document.getElementById('status-bar').textContent = appData.status || ''; buildMenus(appData.menus || []); initMenus(); initTaskBarMenu(); setBootProgress(0.9,'Starting essential services…'); await delay(220); setBootProgress(1,'Orbit OS ready!'); await delay(280); await hideBootLoader(); if(appData.welcome) buildWelcome(appData.welcome); openWindow('console-log'); }catch(err){ console.error('Failed to initialize app data', err); await hideBootLoader(); document.getElementById('status-bar').textContent = 'Failed to load system manifest'; } }
+        async function init(){ showBootLoader('Initializing video BIOS…'); setBootProgress(0.08,'Initializing video BIOS…'); setTheme('retro'); setBootProgress(0.18,'Calibrating color palette…'); try{
+            // Resolve manifest path relative to the current document to avoid broken paths
+            const manifestUrl = new URL('./app-data/app1.json', location.href).href;
+            const res = await fetch(manifestUrl);
+            // if server returned HTML (SPA fallback), this will throw when parsing JSON
+            const appData = await res.json();
+            window.ORBIT_MANIFEST = appData;
+            document.getElementById('status-bar').textContent = appData.status || '';
+            buildMenus(appData.menus || []);
+            initMenus();
+            initTaskBarMenu();
+            setBootProgress(0.9,'Starting essential services…');
+            await delay(220);
+            setBootProgress(1,'Orbit OS ready!');
+            await delay(280);
+            await hideBootLoader();
+            if(appData.welcome) buildWelcome(appData.welcome);
+            openWindow('console-log');
+        }catch(err){ console.error('Failed to initialize app data', err); await hideBootLoader(); document.getElementById('status-bar').textContent = 'Failed to load system manifest'; } }
 
         function buildWelcome(welcome){ if(!welcome) return; const dialog = document.getElementById('welcome-dialog'); dialog.querySelector('.window-title').textContent = welcome.title || ''; const content = dialog.querySelector('.dialog-content'); content.innerHTML = (welcome.lines||[]).map(l=>`<p>${l}</p>`).join(''); const buttons = document.createElement('div'); buttons.className='dialog-buttons'; const btn = document.createElement('div'); btn.className='dialog-btn'; btn.textContent = welcome.button || 'Close'; btn.onclick = ()=>closeDialog('welcome-dialog'); buttons.appendChild(btn); content.appendChild(buttons); dialog.style.display='block' }
 
@@ -260,6 +278,6 @@
         function updateViewportHeight(){ document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`) }
         window.addEventListener('resize', updateViewportHeight); window.addEventListener('orientationchange', updateViewportHeight); updateViewportHeight(); window.onload = init;
     </script>
-    <script src="app-js/gui-api.js"></script>
+    <script src="./app-js/gui-api.js"></script>
 </body>
 </html>
