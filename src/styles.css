@@ -1,0 +1,129 @@
+:root{
+  --bg:#0b0f1a;
+  --ui-bg: rgba(255,255,255,0.04);
+  --accent: #4dd0e1;
+  --muted: #9aa4b2;
+}
+html,body,#app{
+  height:100%;
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:#fff;
+  font-family:Inter, Roboto, system-ui, sans-serif;
+}
+#app{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+canvas#three-canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+/* SVG overlay sits above the canvas */
+svg#svg-overlay{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none; /* allow clicks to fall through */
+}
+#ui{
+  position:absolute;
+  right:18px;
+  top:18px;
+  display:flex;
+  gap:8px;
+}
+#ui button{
+  background:var(--ui-bg);
+  border:1px solid rgba(255,255,255,0.06);
+  color:#fff;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+}
+#hud-text{
+  font-size:32px;
+  fill:#ffffff;
+  opacity:0.9;
+}
+
+@media (max-width:720px){
+  #hud-text{font-size:18px}
+  #hud-dot{r:18}
+}
+
+/* Center prompt and tool icons */
+#center-ui{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  align-items:center;
+  pointer-events:auto; /* interactive */
+  z-index:10;
+}
+
+#prompt-wrap{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  background: rgba(255,255,255,0.03);
+  padding:10px 12px;
+  border-radius:10px;
+  backdrop-filter: blur(6px);
+  border:1px solid rgba(255,255,255,0.05);
+}
+
+#prompt-input{
+  min-width:320px;
+  max-width:70vw;
+  background:transparent;
+  border:none;
+  outline:none;
+  color: #fff;
+  font-size:16px;
+  padding:6px 4px;
+}
+
+#prompt-submit{
+  background:var(--accent);
+  color:#031018;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+#tool-icons{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.tool-btn{
+  width:46px;
+  height:46px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.04);
+  cursor:pointer;
+}
+
+.tool-btn svg{opacity:0.95}
+
+@media (max-width:540px){
+  #prompt-input{min-width:180px}
+  .tool-btn{width:40px;height:40px}
+}
