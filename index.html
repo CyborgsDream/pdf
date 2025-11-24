@@ -82,6 +82,7 @@
         .center-btn{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#00aaff,#0055ff);color:#fff;border:2px solid rgba(255,255,255,0.08);cursor:pointer;box-shadow:0 8px 20px rgba(0,85,255,0.18);display:flex;align-items:center;justify-content:center;padding:0}
         .center-btn:hover{transform:translateY(-6px);box-shadow:0 22px 40px rgba(0,85,255,0.26)}
         .center-icon{width:48px;height:48px;display:block}
+        .center-emoji{font-size:36px;line-height:1;display:block}
     </style>
     <link id="theme-link" rel="stylesheet">
 </head>
@@ -134,19 +135,19 @@
         <!-- Center icons (icon-only) -->
         <div id="center-icons" class="center-icons" role="toolbar" aria-label="Quick apps">
             <button class="center-btn" data-type="text" aria-label="Text">
-                <img class="center-icon" src="./src/icons/icon-192.svg" alt="App">
+                <span class="center-emoji">📄</span>
             </button>
             <button class="center-btn" data-type="comics" aria-label="Comics">
-                <img class="center-icon" src="./src/icons/icon-192.svg" alt="App">
+                <span class="center-emoji">🦸</span>
             </button>
             <button class="center-btn" data-type="books" aria-label="Books">
-                <img class="center-icon" src="./src/icons/icon-192.svg" alt="App">
+                <span class="center-emoji">📚</span>
             </button>
             <button class="center-btn" data-type="newspapers" aria-label="Newspapers">
-                <img class="center-icon" src="./src/icons/icon-192.svg" alt="App">
+                <span class="center-emoji">📜</span>
             </button>
             <button class="center-btn" data-type="other" aria-label="Other">
-                <img class="center-icon" src="./src/icons/icon-192.svg" alt="App">
+                <span class="center-emoji">🌐</span>
             </button>
         </div>
 
@@ -261,6 +262,25 @@
             const dd = e.target.closest('.dropdown'); if(dd) dd.style.display='none';
         });
 
+        function applyCenterIconsFromManifest(icons){
+            if(!icons || !icons.length) return;
+            // mapping of our center buttons to manifest icon types
+            const mapping = { text: 'text-editor', comics: 'comic-forge', books: 'document-editor', newspapers: 'console-log', other: 'html-studio' };
+            const btns = document.querySelectorAll('#center-icons .center-btn');
+            btns.forEach(btn=>{
+                const type = btn.dataset.type;
+                const targetType = mapping[type] || type;
+                const icon = icons.find(i=>i.type === targetType);
+                const emojiEl = btn.querySelector('.center-emoji');
+                if(icon && icon.emoji){
+                    if(emojiEl) emojiEl.textContent = icon.emoji;
+                } else {
+                    // fallback if no manifest icon is found: keep existing emoji or use PDF icon
+                    if(emojiEl && !emojiEl.textContent.trim()) emojiEl.textContent = '📄';
+                }
+            });
+        }
+
         // Minimal app manifest loader
         async function init(){ showBootLoader('Initializing video BIOS…'); setBootProgress(0.08,'Initializing video BIOS…'); setTheme('retro'); setBootProgress(0.18,'Calibrating color palette…'); try{
             // Resolve manifest path relative to the current document to avoid broken paths
@@ -273,6 +293,8 @@
             buildMenus(appData.menus || []);
             initMenus();
             initTaskBarMenu();
+            // Update center toolbar buttons to use icons from manifest
+            applyCenterIconsFromManifest(appData.icons || []);
             setBootProgress(0.9,'Starting essential services…');
             await delay(220);
             setBootProgress(1,'Orbit OS ready!');
