@@ -78,9 +78,10 @@
         /* Small responsivity tweaks */
         @media (max-width:640px){.window{min-width:240px}.zx-loader{width:90%}}
         /* Center icon toolbar */
-        .center-icons{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:14px;z-index:12}
-        .center-btn{min-width:104px;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,#00aaff,#0055ff);color:#fff;border:2px solid rgba(255,255,255,0.08);font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(0,85,255,0.18)}
-        .center-btn:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(0,85,255,0.22)}
+        .center-icons{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:16px;z-index:12}
+        .center-btn{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#00aaff,#0055ff);color:#fff;border:2px solid rgba(255,255,255,0.08);cursor:pointer;box-shadow:0 8px 20px rgba(0,85,255,0.18);display:flex;align-items:center;justify-content:center;padding:0}
+        .center-btn:hover{transform:translateY(-6px);box-shadow:0 22px 40px rgba(0,85,255,0.26)}
+        .center-icon{width:48px;height:48px;display:block}
     </style>
     <link id="theme-link" rel="stylesheet">
 </head>
@@ -130,13 +131,23 @@
         <div class="task-bar" id="task-bar"></div>
         <div class="taskbar-menu" id="taskbar-menu" style="display:none;"></div>
 
-        <!-- Center icons -->
+        <!-- Center icons (icon-only) -->
         <div id="center-icons" class="center-icons" role="toolbar" aria-label="Quick apps">
-            <button class="center-btn" data-type="text">Text</button>
-            <button class="center-btn" data-type="comics">Comics</button>
-            <button class="center-btn" data-type="books">Books</button>
-            <button class="center-btn" data-type="newspapers">Newspapers</button>
-            <button class="center-btn" data-type="other">Other</button>
+            <button class="center-btn" data-type="text" aria-label="Text">
+                <img class="center-icon" src="./src/icons/text.svg" alt="Text">
+            </button>
+            <button class="center-btn" data-type="comics" aria-label="Comics">
+                <img class="center-icon" src="./src/icons/comics.svg" alt="Comics">
+            </button>
+            <button class="center-btn" data-type="books" aria-label="Books">
+                <img class="center-icon" src="./src/icons/books.svg" alt="Books">
+            </button>
+            <button class="center-btn" data-type="newspapers" aria-label="Newspapers">
+                <img class="center-icon" src="./src/icons/newspapers.svg" alt="Newspapers">
+            </button>
+            <button class="center-btn" data-type="other" aria-label="Other">
+                <img class="center-icon" src="./src/icons/other.svg" alt="Other">
+            </button>
         </div>
 
         <!-- Welcome dialog -->
