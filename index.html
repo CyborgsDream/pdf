@@ -30,6 +30,7 @@
         .desktop::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 20px rgba(0,0,0,0.7);pointer-events:none;z-index:101;border-radius:5px}
 
         .menu-bar{height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-bottom:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;position:relative;z-index:10}
+        .menu-bar .menu-left{display:flex;gap:8px;align-items:center}
         .menu-item{margin-right:15px;cursor:pointer;text-shadow:1px 1px 1px #000;padding:0 5px}
         .menu-item:hover{background:rgba(255,255,255,0.2)}
         .dropdown{position:absolute;top:24px;left:0;background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;margin:0;min-width:180px;display:none;z-index:100}
@@ -76,6 +77,10 @@
 
         /* Small responsivity tweaks */
         @media (max-width:640px){.window{min-width:240px}.zx-loader{width:90%}}
+        /* Center icon toolbar */
+        .center-icons{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:14px;z-index:12}
+        .center-btn{min-width:104px;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,#00aaff,#0055ff);color:#fff;border:2px solid rgba(255,255,255,0.08);font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(0,85,255,0.18)}
+        .center-btn:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(0,85,255,0.22)}
     </style>
     <link id="theme-link" rel="stylesheet">
 </head>
@@ -96,6 +101,17 @@
 
         <!-- Menu bar -->
         <div class="menu-bar" id="menu-bar">
+            <div class="menu-left" id="menu-left">
+                <div class="menu-item" data-menu="apps">Apps
+                    <div class="dropdown">
+                        <div class="dropdown-item" data-app="text">Text</div>
+                        <div class="dropdown-item" data-app="comics">Comics</div>
+                        <div class="dropdown-item" data-app="books">Books</div>
+                        <div class="dropdown-item" data-app="newspapers">Newspapers</div>
+                        <div class="dropdown-item" data-app="other">Other</div>
+                    </div>
+                </div>
+            </div>
             <div class="clock" id="clock">12:00:00 PM</div>
         </div>
 
@@ -113,6 +129,15 @@
         <!-- Task bar -->
         <div class="task-bar" id="task-bar"></div>
         <div class="taskbar-menu" id="taskbar-menu" style="display:none;"></div>
+
+        <!-- Center icons -->
+        <div id="center-icons" class="center-icons" role="toolbar" aria-label="Quick apps">
+            <button class="center-btn" data-type="text">Text</button>
+            <button class="center-btn" data-type="comics">Comics</button>
+            <button class="center-btn" data-type="books">Books</button>
+            <button class="center-btn" data-type="newspapers">Newspapers</button>
+            <button class="center-btn" data-type="other">Other</button>
+        </div>
 
         <!-- Welcome dialog -->
         <div class="dialog" id="welcome-dialog" style="display:none;">
@@ -191,6 +216,39 @@
         function initMenus(){ const items = document.querySelectorAll('.menu-item'); items.forEach(item=>{ const dropdown = item.querySelector('.dropdown'); if(dropdown){ item.addEventListener('click', ()=>{ document.querySelectorAll('.dropdown').forEach(d=>{ if(d!==dropdown) d.style.display='none' }); dropdown.style.display = dropdown.style.display==='block' ? 'none' : 'block' }) } }); document.addEventListener('click', (e)=>{ if(!e.target.closest('.menu-item')) document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none') }) }
 
         function initTaskBarMenu(){ const bar = document.getElementById('task-bar'); const menu = document.getElementById('taskbar-menu'); menu.innerHTML=''; const pin = document.createElement('div'); pin.textContent='Pin Mini App'; pin.onclick = ()=>{ openWindow('mini-app'); menu.style.display='none' }; menu.appendChild(pin); bar.addEventListener('contextmenu', e=>{ e.preventDefault(); menu.style.left = e.clientX + 'px'; menu.style.display='block' }); document.addEventListener('click', ()=>{ menu.style.display='none' }) }
+
+        // center-toolbar handlers
+        document.addEventListener('click', (e)=>{
+            const btn = e.target.closest && e.target.closest('.center-btn');
+            if(!btn) return;
+            const type = btn.dataset.type;
+            // prefer opening a configured window type from manifest
+            const mapping = {
+                text: 'document-editor',
+                comics: 'comic-issue-forge',
+                books: 'books-builder',
+                newspapers: 'newspapers-builder',
+                other: 'mini-app'
+            };
+            const winType = mapping[type] || type;
+            if(typeof openWindow === 'function'){
+                openWindow(winType);
+            } else {
+                alert(`Open: ${winType}`);
+            }
+        });
+
+        // top apps menu click -> open same types
+        document.getElementById('menu-left').addEventListener('click', (e)=>{
+            const app = e.target.closest && e.target.closest('.dropdown-item');
+            if(!app) return;
+            const type = app.dataset.app;
+            const mapping = { text: 'document-editor', comics: 'comic-issue-forge', books: 'books-builder', newspapers: 'newspapers-builder', other: 'mini-app' };
+            const winType = mapping[type] || type;
+            if(typeof openWindow === 'function') openWindow(winType);
+            // close the dropdown
+            const dd = e.target.closest('.dropdown'); if(dd) dd.style.display='none';
+        });
 
         // Minimal app manifest loader
         async function init(){ showBootLoader('Initializing video BIOS…'); setBootProgress(0.08,'Initializing video BIOS…'); setTheme('retro'); setBootProgress(0.18,'Calibrating color palette…'); try{ const res = await fetch('app-data/app1.json'); const appData = await res.json(); window.ORBIT_MANIFEST = appData; document.getElementById('status-bar').textContent = appData.status || ''; buildMenus(appData.menus || []); initMenus(); initTaskBarMenu(); setBootProgress(0.9,'Starting essential services…'); await delay(220); setBootProgress(1,'Orbit OS ready!'); await delay(280); await hideBootLoader(); if(appData.welcome) buildWelcome(appData.welcome); openWindow('console-log'); }catch(err){ console.error('Failed to initialize app data', err); await hideBootLoader(); document.getElementById('status-bar').textContent = 'Failed to load system manifest'; } }
