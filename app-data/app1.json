@@ -1,0 +1,58 @@
+{
+  "status": "Orbit OS ready",
+  "welcome": {
+    "title": "Welcome to Orbit OS",
+    "lines": [
+      "Welcome — your creative desktop is ready.",
+      "Use the Apps menu or center toolbar to open tools."
+    ],
+    "button": "Continue"
+  },
+  "menus": [
+    {
+      "label": "System",
+      "items": [
+        { "label": "Show Boot Loader", "action": "show-boot-loader" },
+        { "label": "Retro Theme", "action": "set-theme", "theme": "retro" }
+      ]
+    }
+  ],
+  "windows": {
+    "document-editor": {
+      "title": "Document Editor",
+      "content": "<div class='text-editor text-editor--mono'><div class='text-editor-toolbar'></div><textarea class='text-editor-area'>New document\n</textarea></div>",
+      "width": 720,
+      "height": 520
+    },
+    "comic-issue-forge": {
+      "title": "Comic Issue Forge",
+      "content": "<div style='padding:12px'>Comic builder coming soon.</div>",
+      "width": 800,
+      "height": 540
+    },
+    "books-builder": {
+      "title": "Books Builder",
+      "content": "<div style='padding:12px'>Books builder coming soon.</div>",
+      "width": 800,
+      "height": 540
+    },
+    "newspapers-builder": {
+      "title": "Newspapers Builder",
+      "content": "<div style='padding:12px'>Newspapers builder coming soon.</div>",
+      "width": 800,
+      "height": 540
+    },
+    "console-log": {
+      "title": "Console Log",
+      "content": "<div class='console-log-window' style='padding:8px; font-family:monospace; font-size:13px; color:#000'></div>",
+      "width": 640,
+      "height": 360
+    },
+    "mini-app": {
+      "title": "Mini App",
+      "content": "<div style='padding:12px'>Mini app</div>",
+      "width": 320,
+      "height": 240
+    }
+  }
+}
