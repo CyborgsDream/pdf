@@ -1,154 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Orbit OS — Welcome</title>
-  <link rel="icon" href="/favicon.svg">
-  <style>
-    :root{--bg:#041b2d;--accent:#00aaff;--glass:rgba(255,255,255,0.06);--muted:#9fb8d9}
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'VT323',monospace;color:#eaf6ff}
-    body{background:linear-gradient(180deg,#022039 0%, #041b2d 60%);display:flex;align-items:center;justify-content:center}
-    .shell{width:min(1100px,94vw);border-radius:14px;padding:28px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.015));box-shadow:0 20px 60px rgba(2,16,30,0.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.04)}
-    header{display:flex;align-items:center;gap:18px}
-    .logo{display:flex;align-items:center;gap:12px}
-    .logo svg{width:44px;height:44px}
-    h1{font-size:28px;margin:0}
-    p.lead{margin:6px 0 0;color:var(--muted)}
-
-    nav{margin-top:18px;display:flex;align-items:center;justify-content:space-between}
-    .menu{display:flex;gap:10px}
-    .menu button{background:transparent;color:inherit;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
-    .menu button:hover{background:var(--glass)}
-
-    .main{display:flex;gap:28px;align-items:center;margin-top:22px}
-    .hero{flex:1}
-    .hero h2{font-size:40px;margin:0 0 8px}
-    .hero p{color:var(--muted);margin:0 0 18px}
-    .cta{display:flex;gap:12px}
-    .cta button{background:linear-gradient(90deg,var(--accent),#0077dd);border:0;padding:12px 18px;border-radius:12px;color:#022039;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(0,170,255,0.12)}
-    .cta button.secondary{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)}
-
-    .panel{width:360px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-    .grid{display:grid;grid-template-columns:repeat(1,1fr);gap:10px}
-    .app{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer}
-    .app:hover{background:rgba(0,0,0,0.06)}
-    .badge{width:56px;height:56px;border-radius:10px;background:linear-gradient(180deg,#042b44,#01384e);display:flex;align-items:center;justify-content:center;font-size:22px}
-    .app .meta{flex:1}
-    .app .meta .title{font-weight:700}
-    .app .meta .desc{color:var(--muted);font-size:13px}
-
-    footer{margin-top:18px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between}
-
-    /* small screens */
-    @media (max-width:880px){.main{flex-direction:column}.panel{width:100%}}
-  </style>
-</head>
-<body>
-  <div class="shell" role="main">
-    <header>
-      <div class="logo" aria-hidden>
-        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-          <rect width="64" height="64" rx="12" fill="#002c44"/>
-          <g fill="#00aaff" font-family="VT323,monospace" font-size="18" text-anchor="middle" dominant-baseline="central">
-            <text x="50%" y="52%">OR</text>
-          </g>
-        </svg>
-      </div>
-      <div>
-        <h1>Orbit — Creative Desktop</h1>
-        <p class="lead">A lightweight landing shell for creative apps and playful tools.</p>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">v0.1.3</div>
-      </div>
-    </header>
-
-    <nav>
-      <div class="menu" role="navigation" aria-label="Primary">
-        <button onclick="showSection('home')">Home</button>
-        <button onclick="showSection('apps')">Apps</button>
-        <button onclick="showSection('gallery')">Gallery</button>
-        <button onclick="showSection('about')">About</button>
-      </div>
-      <div>
-        <button onclick="toggleTheme()">Toggle Theme</button>
-      </div>
-    </nav>
-
-    <div class="main">
-      <section class="hero">
-        <h2>Welcome to your Orbit.</h2>
-        <p>Quickly open editors, build comics, author books and publish newspapers — all inside a responsive, playful environment.</p>
-        <div class="cta">
-          <button onclick="openApp('document-editor')">Open Document Editor</button>
-          <button class="secondary" onclick="openApp('comic-forge')">Try Comics Forge</button>
-        </div>
-      </section>
-
-      <aside class="panel">
-        <div style="font-weight:700;margin-bottom:8px">Quick Apps</div>
-        <div class="grid" id="apps-grid">
-          <div class="app" onclick="openApp('document-editor')">
-            <div class="badge">📝</div>
-            <div class="meta"><div class="title">Text Editor</div><div class="desc">Write and save notes.</div></div>
-          </div>
-          <div class="app" onclick="openApp('comic-forge')">
-            <div class="badge">🦸</div>
-            <div class="meta"><div class="title">Comics Forge</div><div class="desc">Create issues and panels.</div></div>
-          </div>
-          <div class="app" onclick="openApp('books-builder')">
-            <div class="badge">📚</div>
-            <div class="meta"><div class="title">Books Builder</div><div class="desc">Assemble chapters and covers.</div></div>
-          </div>
-          <div class="app" onclick="openApp('newspapers-builder')">
-            <div class="badge">📰</div>
-            <div class="meta"><div class="title">Newspapers</div><div class="desc">Layout and publish articles.</div></div>
-          </div>
-          <div class="app" onclick="openApp('mini-app')">
-            <div class="badge">⚙️</div>
-            <div class="meta"><div class="title">Utilities</div><div class="desc">Calculator, Calendar, Tools.</div></div>
-          </div>
-        </div>
-      </aside>
-    </div>
-
-    <footer>
-      <div>© 2025 CyborgsDream</div>
-      <div><small class="muted">Built for creators • responsive • friendly</small></div>
-    </footer>
-  </div>
-
-  <script>
-    function showSection(name){ alert('Switch to: '+name); }
-    function toggleTheme(){ document.body.classList.toggle('alt-theme'); }
-    function openApp(type){
-      // If the original Orbit app API exists, prefer it
-      if(window.openWindow) return openWindow(type);
-      // Otherwise, navigate to in-repo pages if available
-      const map = {
-        'document-editor':'documonster.html',
-        'comic-forge':'comic-issue-forge.html',
-        'books-builder':'documonster.html',
-        'newspapers-builder':'scanx.html',
-        'mini-app':'html-studio.html'
-      };
-      const url = map[type];
-      if(url){ window.location.href = url; } else { alert('Open: '+type); }
-    }
-  </script>
-</body>
-</html>
-<!--
- * @version   v1.9.1
- * @codename  "ZoomWin"
- * @author    Prof. Adrian Zephyr
- * @date      2025-08-12
- * @log       Add 3D zoom animations for windows
- * @changelog
- *   - [2025-08-12] Implemented 3D open/close zoom effects.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,11 +14,27 @@
         }
 
         /* Desktop container */
+        :root{--sidebar-width:82px}
         .desktop{width:100vw;height:calc(var(--vh,1vh)*100);background:#0055aa;position:relative;overflow:hidden;box-shadow:0 0 30px rgba(0,100,255,0.5);border:2px solid #00aaff}
-
+        
         /* CRT scanlines */
         .desktop::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:100}
         .desktop::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 20px rgba(0,0,0,0.7);pointer-events:none;z-index:101;border-radius:5px}
+
+        .workspace-shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;height:100%;position:relative;z-index:1}
+        .sidebar{background:linear-gradient(180deg,#02265f,#01193d);border-right:1px solid rgba(0,170,255,.4);display:flex;flex-direction:column;align-items:center;padding:14px 10px;gap:12px;position:relative;z-index:5;box-shadow:4px 0 16px rgba(0,0,0,.35)}
+        .sidebar::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+        .sidebar-brand{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#00aaff,#0273d1);color:#021c3a;font-weight:700;font-size:18px;letter-spacing:.02em;text-shadow:0 1px 1px rgba(255,255,255,.4)}
+        .sidebar-divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);margin:4px 0 6px}
+        .sidebar-icons{display:flex;flex-direction:column;gap:10px;width:100%;align-items:center}
+        .center-icons{position:static;transform:none;display:flex;flex-direction:column;gap:10px;z-index:auto;width:100%}
+        .center-btn{width:56px;height:56px;border-radius:16px;background:linear-gradient(180deg,#0a3f7c,#082a52);border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 22px rgba(0,40,100,0.35);transition:transform .2s ease, box-shadow .2s ease}
+        .center-btn:hover{transform:translateY(-4px);box-shadow:0 16px 26px rgba(0,60,140,0.4)}
+        .center-icon{width:28px;height:28px;display:block}
+        .center-emoji{font-size:22px;line-height:1;display:block}
+        .sidebar-label{color:#8bb6ff;font-size:14px;margin-top:auto;text-align:center;text-transform:uppercase;letter-spacing:.08em}
+
+        .workspace-area{position:relative;overflow:hidden;padding:24px 16px 56px 16px;min-height:100%}
 
         .menu-bar{height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-bottom:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;position:relative;z-index:10}
         .menu-bar .menu-left{display:flex;gap:8px;align-items:center}
@@ -210,6 +75,9 @@
 
         /* Wallpaper and bars */
         .wallpaper{position:absolute;top:24px;left:0;right:0;bottom:24px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230055aa"/><path d="M0,0 L100,100 M100,0 L0,100" stroke="%230077cc" stroke-width="0.5"/></svg>');opacity:.2;z-index:1;pointer-events:none}
+        .disk-drive{position:absolute;top:32px;right:20px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:8px;box-shadow:0 6px 14px rgba(0,0,0,.28);z-index:6}
+        .drive-slot{width:34px;height:12px;background:linear-gradient(90deg,#0f2f63,#0b244b);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;padding:2px;border-radius:6px;position:relative}
+        .drive-light{width:7px;height:7px;border-radius:50%;background:#00ff8c;box-shadow:0 0 12px rgba(0,255,140,.6)}
         .status-bar{position:absolute;bottom:24px;left:0;right:0;height:20px;background:rgba(0,0,0,.3);color:#fff;font-size:14px;padding:0 10px;display:flex;align-items:center;z-index:2}
         .task-bar{position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-top:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;z-index:10}
 
@@ -219,12 +87,6 @@
 
         /* Small responsivity tweaks */
         @media (max-width:640px){.window{min-width:240px}.zx-loader{width:90%}}
-        /* Center icon toolbar */
-        .center-icons{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:16px;z-index:12}
-        .center-btn{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#00aaff,#0055ff);color:#fff;border:2px solid rgba(255,255,255,0.08);cursor:pointer;box-shadow:0 8px 20px rgba(0,85,255,0.18);display:flex;align-items:center;justify-content:center;padding:0}
-        .center-btn:hover{transform:translateY(-6px);box-shadow:0 22px 40px rgba(0,85,255,0.26)}
-        .center-icon{width:48px;height:48px;display:block}
-        .center-emoji{font-size:36px;line-height:1;display:block}
     </style>
     <link id="theme-link" rel="stylesheet">
 </head>
@@ -239,73 +101,83 @@
             <div class="zx-loader-status" id="boot-status">Initializing subsystems…</div>
         </div>
     </div>
-    <div class="desktop" id="desktop">
+    <div class="desktop">
         <!-- Retro wallpaper (click-through) -->
         <div class="wallpaper"></div>
 
-        <!-- Menu bar -->
-        <div class="menu-bar" id="menu-bar">
-            <div class="menu-left" id="menu-left">
-                <div class="menu-item" data-menu="apps">Apps
-                    <div class="dropdown">
-                        <div class="dropdown-item" data-app="text">Text</div>
-                        <div class="dropdown-item" data-app="comics">Comics</div>
-                        <div class="dropdown-item" data-app="books">Books</div>
-                        <div class="dropdown-item" data-app="newspapers">Newspapers</div>
-                        <div class="dropdown-item" data-app="other">Other</div>
+        <div class="workspace-shell">
+            <aside class="sidebar" aria-label="Quick launch">
+                <div class="sidebar-brand" aria-hidden>OR</div>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-icons" role="toolbar" aria-label="Quick apps">
+                    <div id="center-icons" class="center-icons">
+                        <button class="center-btn" data-type="text" aria-label="Text">
+                            <span class="center-emoji">📄</span>
+                        </button>
+                        <button class="center-btn" data-type="comics" aria-label="Comics">
+                            <span class="center-emoji">🦸</span>
+                        </button>
+                        <button class="center-btn" data-type="books" aria-label="Books">
+                            <span class="center-emoji">📚</span>
+                        </button>
+                        <button class="center-btn" data-type="newspapers" aria-label="Newspapers">
+                            <span class="center-emoji">📜</span>
+                        </button>
+                        <button class="center-btn" data-type="other" aria-label="Other">
+                            <span class="center-emoji">🌐</span>
+                        </button>
                     </div>
                 </div>
+                <div class="sidebar-label">Workspace</div>
+            </aside>
+
+            <div class="workspace-area" id="workspace-area">
+                <!-- Menu bar -->
+                <div class="menu-bar" id="menu-bar">
+                    <div class="menu-left" id="menu-left">
+                        <div class="menu-item" data-menu="apps">Apps
+                            <div class="dropdown">
+                                <div class="dropdown-item" data-app="text">Text</div>
+                                <div class="dropdown-item" data-app="comics">Comics</div>
+                                <div class="dropdown-item" data-app="books">Books</div>
+                                <div class="dropdown-item" data-app="newspapers">Newspapers</div>
+                                <div class="dropdown-item" data-app="other">Other</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="clock" id="clock">12:00:00 PM</div>
+                </div>
+
+                <!-- Storage indicator -->
+                <div class="disk-drive">
+                    <div>Storage:</div>
+                    <div class="drive-slot">
+                        <div class="drive-light"></div>
+                    </div>
+                </div>
+
+                <!-- Status bar -->
+                <div class="status-bar" id="status-bar"></div>
+
+                <!-- Task bar -->
+                <div class="task-bar" id="task-bar"></div>
+                <div class="taskbar-menu" id="taskbar-menu" style="display:none;"></div>
+
+                <!-- Welcome dialog -->
+                <div class="dialog" id="welcome-dialog" style="display:none;">
+                    <div class="window-header">
+                        <div class="window-title"></div>
+                    </div>
+                    <div class="dialog-content"></div>
+                </div>
             </div>
-            <div class="clock" id="clock">12:00:00 PM</div>
-        </div>
-
-        <!-- Storage indicator -->
-        <div class="disk-drive">
-            <div>Storage:</div>
-            <div class="drive-slot">
-                <div class="drive-light"></div>
-            </div>
-        </div>
-
-        <!-- Status bar -->
-        <div class="status-bar" id="status-bar"></div>
-
-        <!-- Task bar -->
-        <div class="task-bar" id="task-bar"></div>
-        <div class="taskbar-menu" id="taskbar-menu" style="display:none;"></div>
-
-        <!-- Center icons (icon-only) -->
-        <div id="center-icons" class="center-icons" role="toolbar" aria-label="Quick apps">
-            <button class="center-btn" data-type="text" aria-label="Text">
-                <span class="center-emoji">📄</span>
-            </button>
-            <button class="center-btn" data-type="comics" aria-label="Comics">
-                <span class="center-emoji">🦸</span>
-            </button>
-            <button class="center-btn" data-type="books" aria-label="Books">
-                <span class="center-emoji">📚</span>
-            </button>
-            <button class="center-btn" data-type="newspapers" aria-label="Newspapers">
-                <span class="center-emoji">📜</span>
-            </button>
-            <button class="center-btn" data-type="other" aria-label="Other">
-                <span class="center-emoji">🌐</span>
-            </button>
-        </div>
-
-        <!-- Welcome dialog -->
-        <div class="dialog" id="welcome-dialog" style="display:none;">
-            <div class="window-header">
-                <div class="window-title"></div>
-            </div>
-            <div class="dialog-content"></div>
         </div>
     </div>
 
     <script>
         // Lightweight, optimized version of Orbit OS main script with icons removed
         const state = { windows: [], zIndex: 5, windowCount: 0, puzzleState: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0] };
-        const desktop = document.getElementById('desktop');
+        const desktop = document.getElementById('workspace-area');
         const bootLoader = document.getElementById('boot-loader');
         const bootStatus = document.getElementById('boot-status');
         const defaultBootStatus = 'Initializing subsystems…';
