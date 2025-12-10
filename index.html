@@ -93,6 +93,7 @@
         <button data-menu="new-note">New Note</button>
         <button data-menu="new-canvas">New Canvas</button>
         <button data-menu="open-files">Open File Manager</button>
+        <button data-menu="open-press">Open Press Suite</button>
         <button data-menu="reset">Reset Storage</button>
         <button data-menu="shutdown">Close All</button>
       </div>
@@ -102,6 +103,7 @@
         <button data-menu="new-note">New Note</button>
         <button data-menu="new-canvas">New Canvas</button>
         <button data-menu="open-files">Open File Manager</button>
+        <button data-menu="open-press">Open Press Suite</button>
       </div>
     </div>
     <div class="menu" tabindex="0" aria-expanded="false">view
@@ -127,6 +129,9 @@
     </div>
     <div class="icon" style="left:12px;top:266px" data-launch="canvas">
       <div class="glyph" data-svg="canvas"></div><div class="label">Canvas</div>
+    </div>
+    <div class="icon" style="left:12px;top:350px" data-launch="press">
+      <div class="glyph" data-svg="press"></div><div class="label">Press Suite</div>
     </div>
     <div class="dock" id="dock" aria-label="Minimised Windows Dock"></div>
   </div>
@@ -190,6 +195,13 @@
       <path d="M10 24c5-6 10-3 16-8 3-3 6-4 10-1" stroke="#6a6a6a" fill="none"/>
       <path d="M35 29l6-5" stroke="#000" />
       <path d="M41 24l-8 6 3-9 7 3z" fill="#f2c38a" stroke="#000"/>
+    </svg>`,
+    press:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="4" y="4" width="40" height="28" rx="2" fill="#fff" stroke="#000"/>
+      <path d="M6 8h36" stroke="#000"/>
+      <path d="M8 12h20M8 16h28M8 20h24M8 24h30" stroke="#555"/>
+      <rect x="30" y="12" width="10" height="10" fill="#e8d39a" stroke="#000"/>
+      <path d="M30 22h10l-2 6H32z" fill="#d2e5f9" stroke="#000"/>
     </svg>`
   };
   $$('[data-svg]').forEach(g=>g.innerHTML=ICONS[g.dataset.svg]||'');
@@ -471,8 +483,70 @@
     WM.createWindow({title:'Canvas Editor — '+file.name,width:720,height:500,left:90,top:70,content:wrap,appId:'canvas'});
   }
 
+  /* ---------- KarolCo Press (Newspaper builder) ---------- */
+  let pressHtmlPromise=null;
+  function loadPressHtml(){
+    if(!pressHtmlPromise){
+      pressHtmlPromise=fetch('app-data/karolco-press-v0.0.10.html').then(r=>r.text()).catch(()=>null);
+    }
+    return pressHtmlPromise;
+  }
+
+  function openPress(){
+    const wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;height:100%';
+    const bar=document.createElement('div'); bar.className='np-toolbar';
+    bar.innerHTML=`<button data-a="reload">Reload</button>
+      <button data-a="save">Save export to Desk</button>
+      <button data-a="popout">Open in new tab</button>
+      <span style="margin-left:auto" data-a="status">Loading press…</span>`;
+    const iframe=document.createElement('iframe'); iframe.title='KarolCo Press'; iframe.setAttribute('aria-label','KarolCo Press newspaper builder');
+    Object.assign(iframe.style,{flex:'1',border:'1px solid #000',background:'#111'});
+    wrap.appendChild(bar); wrap.appendChild(iframe);
+
+    WM.createWindow({title:'KarolCo Press — Newspaper Builder',width:980,height:720,left:140,top:60,content:wrap,appId:'press'});
+    const status=()=>bar.querySelector('[data-a="status"]');
+
+    function setStatus(msg){ const s=status(); if(s) s.textContent=msg; }
+    function loadIntoFrame(){ setStatus('Loading press…'); loadPressHtml().then(html=>{
+      if(!html){ setStatus('Failed to load press app'); return; }
+      iframe.srcdoc=html; setStatus('Press ready — export with MDX or print');
+    }); }
+
+    function saveExport(){
+      const doc=iframe.contentDocument; if(!doc){ setStatus('App not ready yet'); return; }
+      const btn=doc.getElementById('exportXmd'); if(!btn){ setStatus('Export control unavailable'); return; }
+      btn.click();
+      setTimeout(()=>{
+        const ta=doc.getElementById('xmdOutput');
+        const val=ta?.value?.trim();
+        if(!val){ setStatus('Nothing to save yet'); return; }
+        const name='press-'+new Date().toISOString().replace(/[:T]/g,'-').slice(0,19)+'.mdx';
+        const file=fs.newNote(name,val); fs.setType(file.id,'txt');
+        setStatus('Saved to Desk: '+name);
+      },80);
+    }
+
+    function popout(){
+      loadPressHtml().then(html=>{
+        if(!html){ setStatus('Cannot open in new tab (missing file)'); return; }
+        const blob=new Blob([html],{type:'text/html'}); const url=URL.createObjectURL(blob);
+        window.open(url,'_blank');
+      });
+    }
+
+    bar.addEventListener('click',(e)=>{
+      const act=e.target?.dataset?.a;
+      if(act==='reload'){ loadIntoFrame(); }
+      if(act==='save'){ saveExport(); }
+      if(act==='popout'){ popout(); }
+    });
+
+    iframe.addEventListener('load',()=>setStatus('Press ready — export with MDX or print'));
+    loadIntoFrame();
+  }
+
   /* ---------- Desktop interactions ---------- */
-  function launch(id){ if(id==='files') openFiles(); if(id==='note') openNote(); if(id==='calc') openCalc(); if(id==='canvas') openCanvas(); }
+  function launch(id){ if(id==='files') openFiles(); if(id==='note') openNote(); if(id==='calc') openCalc(); if(id==='canvas') openCanvas(); if(id==='press') openPress(); }
   let sel=null;
   desktop.addEventListener('click',(e)=>{
     if(skipNextIconClick){ skipNextIconClick=false; return; }
@@ -522,6 +596,7 @@
     if(act==='new-note') openNote();
     if(act==='new-canvas') openCanvas();
     if(act==='open-files') openFiles();
+    if(act==='open-press') openPress();
     if(act==='shutdown') $$('.win').forEach(w=>w.remove());
     if(act==='reset') fs.reset();
     if(act==='tile') WM.tile();
