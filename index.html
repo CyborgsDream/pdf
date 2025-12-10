@@ -1,330 +1,543 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbit OS v 0.1.3</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
-    <style>
-        /* Core reset & fonts */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:'VT323',monospace}
-        html,body{height:100%}
-        body{
-            background:#005;min-height:calc(var(--vh,1vh)*100);overflow:hidden;display:flex;justify-content:center;align-items:center;color:#fff
-        }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>geOS — Tiny Retro Desktop (v0.0.3)</title>
+<style>
+  :root{--bg:#dfe6e3;--ink:#000;--barH:22px;--fs:10px;--ease:cubic-bezier(.22,.61,.36,1)}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+    font:var(--fs)/1.15 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1px;overflow:hidden}
+  #desktop{position:fixed;inset:0;display:flex;flex-direction:column;background:
+    linear-gradient(0deg,transparent 50%,rgba(0,0,0,.03) 50%) 0 0/2px 2px,
+    repeating-linear-gradient(45deg,#cfd7d3 0,#cfd7d3 2px,#d9e1dd 2px,#d9e1dd 4px)}
+  .menubar{height:var(--barH);display:flex;align-items:center;gap:10px;padding:0 6px;
+    background:linear-gradient(#e7ecea,#d9e1dd);border-bottom:1px solid #000;user-select:none}
+  .menu{position:relative;padding:1px 5px;border:1px solid transparent;cursor:default}
+  .menu:hover{border-color:#9aa09d;background:#f4f7f6}
+  .dropdown{position:absolute;top:100%;left:0;background:#f7fbf9;border:1px solid #000;box-shadow:2px 2px 0 #000;min-width:140px;display:none;z-index:10000}
+  .menu[aria-expanded="true"] .dropdown,.menu:hover .dropdown{display:block}
+  .dropdown button{all:unset;display:block;width:100%;padding:4px 6px;cursor:default}
+  .dropdown button:hover{background:#cfe0ff}
+  .spacer{flex:1}.clock{padding:1px 6px;border:1px solid #9aa09d;background:#f4f7f6;min-width:84px;text-align:center}
+  .work{position:relative;flex:1 1 auto;overflow:hidden;padding:8px}
 
-        /* Desktop container */
-        :root{--sidebar-width:82px}
-        .desktop{width:100vw;height:calc(var(--vh,1vh)*100);background:#0055aa;position:relative;overflow:hidden;box-shadow:0 0 30px rgba(0,100,255,0.5);border:2px solid #00aaff}
-        
-        /* CRT scanlines */
-        .desktop::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:100}
-        .desktop::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 20px rgba(0,0,0,0.7);pointer-events:none;z-index:101;border-radius:5px}
+  .icon{position:absolute;width:66px;cursor:grab;user-select:none;text-align:center;touch-action:none}
+  .glyph{width:40px;height:34px;margin:0 auto;border:1px solid #000;box-shadow:2px 2px 0 #000;background:#eef2f0;display:flex;align-items:center;justify-content:center}
+  .label{margin-top:2px;border:1px solid #000;background:#f0f6ff;padding:1px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .icon.selected .label{background:#aecdff}
 
-        .workspace-shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;height:100%;position:relative;z-index:1}
-        .sidebar{background:linear-gradient(180deg,#02265f,#01193d);border-right:1px solid rgba(0,170,255,.4);display:flex;flex-direction:column;align-items:center;padding:14px 10px;gap:12px;position:relative;z-index:5;box-shadow:4px 0 16px rgba(0,0,0,.35)}
-        .sidebar::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
-        .sidebar-brand{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#00aaff,#0273d1);color:#021c3a;font-weight:700;font-size:18px;letter-spacing:.02em;text-shadow:0 1px 1px rgba(255,255,255,.4)}
-        .sidebar-divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);margin:4px 0 6px}
-        .sidebar-icons{display:flex;flex-direction:column;gap:10px;width:100%;align-items:center}
-        .center-icons{position:static;transform:none;display:flex;flex-direction:column;gap:10px;z-index:auto;width:100%}
-        .center-btn{width:56px;height:56px;border-radius:16px;background:linear-gradient(180deg,#0a3f7c,#082a52);border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 22px rgba(0,40,100,0.35);transition:transform .2s ease, box-shadow .2s ease}
-        .center-btn:hover{transform:translateY(-4px);box-shadow:0 16px 26px rgba(0,60,140,0.4)}
-        .center-icon{width:28px;height:28px;display:block}
-        .center-emoji{font-size:22px;line-height:1;display:block}
-        .sidebar-label{color:#8bb6ff;font-size:14px;margin-top:auto;text-align:center;text-transform:uppercase;letter-spacing:.08em}
+  .dock{position:absolute;right:8px;bottom:8px;display:flex;gap:6px;padding:3px 4px;background:#eef2f0;border:1px solid #000;box-shadow:2px 2px 0 #000}
+  .dock .task{padding:2px 5px;border:1px solid #000;background:#fff;cursor:default}
+  .dock .task:hover{background:#cfe0ff}
 
-        .workspace-area{position:relative;overflow:hidden;padding:24px 16px 56px 16px;min-height:100%}
+  .win{position:absolute;min-width:200px;min-height:120px;width:360px;height:220px;top:70px;left:80px;
+    background:#fff;border:1px solid #000;box-shadow:4px 4px 0 #000;display:flex;flex-direction:column;contain:layout paint size;
+    transform-origin:top left;transition:transform .18s var(--ease),opacity .18s var(--ease),box-shadow .18s var(--ease)}
+  .win.opening{transform:translateY(6px) scale(.97);box-shadow:0 0 0 #000}
+  .win.closing{transform:translateY(6px) scale(.97);box-shadow:0 0 0 #000;opacity:0}
+  .win.minimising{transform:scale(.9);opacity:0}
+  .win.resizing{box-shadow:6px 6px 0 #000}
+  .win.minimised{display:none}
 
-        .menu-bar{height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-bottom:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;position:relative;z-index:10}
-        .menu-bar .menu-left{display:flex;gap:8px;align-items:center}
-        .menu-item{margin-right:15px;cursor:pointer;text-shadow:1px 1px 1px #000;padding:0 5px}
-        .menu-item:hover{background:rgba(255,255,255,0.2)}
-        .dropdown{position:absolute;top:24px;left:0;background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;margin:0;min-width:180px;display:none;z-index:100}
-        .dropdown-item{padding:5px 10px;cursor:pointer;border-bottom:1px solid #999}
-        .dropdown-item:hover{background:rgba(0,0,255,0.4);color:#fff}
-        .clock{margin-left:auto;text-shadow:1px 1px 1px #000;font-size:18px}
+  .titlebar{-webkit-app-region:drag;user-select:none;cursor:grab;flex:0 0 auto;display:flex;align-items:center;gap:6px;
+    background:linear-gradient(#e7ecea,#d1dad6);border-bottom:1px solid #000;padding:2px 4px}
+  .titlebar:active{cursor:grabbing}
+  .title{font-weight:bold}.controls{margin-left:auto;display:flex;gap:4px}
+  .btn{width:14px;height:14px;border:1px solid #000;background:#fff;display:grid;place-items:center;cursor:default;line-height:1}
+  .btn:hover{background:#cfe0ff}
+  .content{flex:1 1 auto;overflow:auto;padding:6px;background:#fff}
+  .status{flex:0 0 auto;border-top:1px solid #000;background:#eef2f0;padding:2px 4px}
+  .resize{position:absolute;width:12px;height:12px;right:0;bottom:0;cursor:nwse-resize;
+    background:repeating-linear-gradient(135deg,#000 0,#000 1px,transparent 1px,transparent 3px)}
+  .hidden{display:none!important}
+  .maximised{top:var(--barH)!important;left:0!important;width:100%!important;height:calc(100% - var(--barH))!important}
+  :focus-visible{outline:1px dashed #000;outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){.win{transition:none}}
 
-        /* Window styles */
-        .window{position:absolute;background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;border-top-color:#fff;border-left-color:#fff;border-right-color:#555;border-bottom-color:#555;box-shadow:5px 5px 10px rgba(0,0,0,0.5);min-width:300px;min-height:200px;z-index:5;display:flex;flex-direction:column;resize:both;overflow:hidden;transform-style:preserve-3d;transition:transform .3s ease,opacity .3s ease}
-        .window.zoom-init,.window.zoom-out{transform:perspective(800px) translateZ(-400px) scale(.8);opacity:0}
-        .window-header{height:24px;background:linear-gradient(to right,#0000aa,#000088);color:white;display:flex;align-items:center;padding:0 5px;cursor:move;font-size:18px}
-        .window-title{flex:1;text-shadow:1px 1px 1px #000}
-        .window-controls{display:flex;gap:5px}
-        .window-btn{width:18px;height:18px;display:flex;justify-content:center;align-items:center;background:linear-gradient(to bottom,#c0c0c0,#a0a0a0);border:1px solid;border-top-color:#fff;border-left-color:#fff;border-right-color:#555;border-bottom-color:#555;cursor:pointer;font-size:14px;line-height:1}
-        .window-btn:active{border-top-color:#555;border-left-color:#555;border-right-color:#fff;border-bottom-color:#fff}
-        .window-content{padding:10px;flex:1;overflow:auto;color:#000;font-size:18px;line-height:1.4;background:#c0c0c0;position:relative}
+  /* Panic banner for runtime errors */
+  .panic{position:fixed;left:6px;bottom:6px;max-width:90vw;background:#000;color:#fff;border:1px solid #fff;padding:6px 8px;z-index:99999;font-size:10px}
 
-        /* Loaders */
-        .loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;color:#fff;z-index:5;font-family:'IBM Plex Mono', 'Courier New', monospace;letter-spacing:.08em}
+  /* App-specific */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .file{border:1px solid #000;padding:5px;background:#f8fbfa;cursor:default}
+  .file:hover{background:#cfe0ff}
+  .row{display:flex;gap:6px;align-items:center}
+  .fi{width:20px;height:20px;border:1px solid #000;background:#fff;box-shadow:1px 1px 0 #000}
+  .name{font-weight:bold}
+  .np-toolbar{display:flex;gap:6px;margin-bottom:6px}
+  .np-toolbar button{all:unset;border:1px solid #000;padding:2px 5px;background:#fff;cursor:default}
+  .np-toolbar button:hover{background:#cfe0ff}
+  .np-area{width:100%;height:calc(100% - 46px);resize:none;border:1px solid #000;padding:5px;box-sizing:border-box;font:var(--fs)/1.3 ui-monospace,monospace}
+  .calc{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .calc .display{grid-column:1/-1;border:1px solid #000;background:#e8efe9;padding:5px;text-align:right}
+  .calc button{all:unset;border:1px solid #000;padding:6px;background:#fff;text-align:center;cursor:default}
+  .calc button:hover{background:#cfe0ff}
 
-        .boot-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,rgba(0,30,120,.92),rgba(0,0,0,.95));z-index:2000;transition:opacity .35s ease;--boot-progress:0}
-        .boot-loader.boot-loader--hidden{opacity:0;pointer-events:none}
-        .zx-loader{width:min(360px,80%);border:4px solid #fff;box-shadow:0 0 0 4px #00a8f0 inset,0 0 0 8px #000,0 0 32px rgba(0,168,240,.55);padding:18px 16px 22px;background:#000;display:flex;flex-direction:column;gap:18px}
-        .zx-loader-title{text-align:center;font-size:.95rem;color:#ffe600}
-        .zx-loader-bar{position:relative;height:26px;border:3px solid #fff;padding:2px;overflow:hidden;background:#000}
-        .zx-loader-fill{position:absolute;inset:2px;background:repeating-linear-gradient(90deg,#ff004d 0 18px,#ffe600 18px 36px,#00b543 36px 54px,#0099ff 54px 72px,#7d00ff 72px 90px,#ff7800 90px 108px);transform-origin:left center;animation:zx-progress 2.8s steps(28) infinite}
-        .zx-loader-glow{position:absolute;inset:0;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 2px,transparent 2px 4px);opacity:.35;animation:zx-scan .45s steps(3) infinite}
-        .zx-loader-status{text-align:center;font-size:.8rem;color:#00f0ff;animation:zx-blink 1.2s steps(2) infinite}
-        @keyframes zx-progress{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
-        @keyframes zx-scan{0%{opacity:.25}50%{opacity:.55}100%{opacity:.25}}@keyframes zx-blink{0%,100%{opacity:1}50%{opacity:.4}}
-
-        /* Terminal styles */
-        .terminal{display:flex;flex-direction:column;height:100%;background:radial-gradient(circle at top,#0a0a0a,#020202 70%);border:2px solid #0f0;border-radius:6px;box-shadow:inset 0 0 12px rgba(0,255,170,.25);font-family:'VT323',monospace;color:#0f0}
-        .terminal-screen{flex:1;overflow:auto;padding:10px;outline:none}
-
-        /* Wallpaper and bars */
-        .wallpaper{position:absolute;top:24px;left:0;right:0;bottom:24px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230055aa"/><path d="M0,0 L100,100 M100,0 L0,100" stroke="%230077cc" stroke-width="0.5"/></svg>');opacity:.2;z-index:1;pointer-events:none}
-        .disk-drive{position:absolute;top:32px;right:20px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:8px;box-shadow:0 6px 14px rgba(0,0,0,.28);z-index:6}
-        .drive-slot{width:34px;height:12px;background:linear-gradient(90deg,#0f2f63,#0b244b);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;padding:2px;border-radius:6px;position:relative}
-        .drive-light{width:7px;height:7px;border-radius:50%;background:#00ff8c;box-shadow:0 0 12px rgba(0,255,140,.6)}
-        .status-bar{position:absolute;bottom:24px;left:0;right:0;height:20px;background:rgba(0,0,0,.3);color:#fff;font-size:14px;padding:0 10px;display:flex;align-items:center;z-index:2}
-        .task-bar{position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(to bottom,#0066cc,#004499);border-top:1px solid #00aaff;display:flex;align-items:center;padding:0 10px;font-size:18px;color:#fff;z-index:10}
-
-        /* Dialog */
-        .dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(to bottom,#a0a0a0,#808080);border:2px solid;border-top-color:#fff;border-left-color:#fff;border-right-color:#555;border-bottom-color:#555;min-width:300px;z-index:20;box-shadow:5px 5px 15px rgba(0,0,0,.7)}
-        .dialog-content{padding:20px;text-align:center}
-
-        /* Small responsivity tweaks */
-        @media (max-width:640px){.window{min-width:240px}.zx-loader{width:90%}}
-    </style>
-    <link id="theme-link" rel="stylesheet">
+  /* Canvas Editor */
+  .ce-toolbar{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+  .ce-toolbar button,.ce-toolbar select,.ce-toolbar input[type="color"]{
+    all:unset;border:1px solid #000;padding:2px 5px;background:#fff;cursor:default}
+  .ce-toolbar button:hover{background:#cfe0ff}
+  .ce-wrap{position:relative; background:
+      conic-gradient(from 45deg,#eee 0 25%,#ccc 0 50%,#eee 0 75%,#ccc 0) 0 0/12px 12px}
+  .ce{display:block; background:#fff; image-rendering:pixelated; border:1px solid #000}
+</style>
 </head>
 <body>
-    <div class="boot-loader" id="boot-loader" role="alert" aria-live="assertive">
-        <div class="zx-loader">
-            <div class="zx-loader-title" id="boot-title">Orbit OS is booting…</div>
-            <div class="zx-loader-bar">
-                <div class="zx-loader-fill"></div>
-                <div class="zx-loader-glow"></div>
-            </div>
-            <div class="zx-loader-status" id="boot-status">Initializing subsystems…</div>
-        </div>
+<div id="desktop">
+  <div class="menubar" role="menubar" aria-label="geOS Menu">
+    <div class="menu" tabindex="0" aria-expanded="false">geos
+      <div class="dropdown" role="menu">
+        <button data-menu="about">About geOS…</button>
+        <button data-menu="new-note">New Note</button>
+        <button data-menu="new-canvas">New Canvas</button>
+        <button data-menu="open-files">Open File Manager</button>
+        <button data-menu="reset">Reset Storage</button>
+        <button data-menu="shutdown">Close All</button>
+      </div>
     </div>
-    <div class="desktop">
-        <!-- Retro wallpaper (click-through) -->
-        <div class="wallpaper"></div>
-
-        <div class="workspace-shell">
-            <aside class="sidebar" aria-label="Quick launch">
-                <div class="sidebar-brand" aria-hidden>OR</div>
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-icons" role="toolbar" aria-label="Quick apps">
-                    <div id="center-icons" class="center-icons">
-                        <button class="center-btn" data-type="text" aria-label="Text">
-                            <span class="center-emoji">📄</span>
-                        </button>
-                        <button class="center-btn" data-type="comics" aria-label="Comics">
-                            <span class="center-emoji">🦸</span>
-                        </button>
-                        <button class="center-btn" data-type="books" aria-label="Books">
-                            <span class="center-emoji">📚</span>
-                        </button>
-                        <button class="center-btn" data-type="newspapers" aria-label="Newspapers">
-                            <span class="center-emoji">📜</span>
-                        </button>
-                        <button class="center-btn" data-type="other" aria-label="Other">
-                            <span class="center-emoji">🌐</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="sidebar-label">Workspace</div>
-            </aside>
-
-            <div class="workspace-area" id="workspace-area">
-                <!-- Menu bar -->
-                <div class="menu-bar" id="menu-bar">
-                    <div class="menu-left" id="menu-left">
-                        <div class="menu-item" data-menu="apps">Apps
-                            <div class="dropdown">
-                                <div class="dropdown-item" data-app="text">Text</div>
-                                <div class="dropdown-item" data-app="comics">Comics</div>
-                                <div class="dropdown-item" data-app="books">Books</div>
-                                <div class="dropdown-item" data-app="newspapers">Newspapers</div>
-                                <div class="dropdown-item" data-app="other">Other</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="clock" id="clock">12:00:00 PM</div>
-                </div>
-
-                <!-- Storage indicator -->
-                <div class="disk-drive">
-                    <div>Storage:</div>
-                    <div class="drive-slot">
-                        <div class="drive-light"></div>
-                    </div>
-                </div>
-
-                <!-- Status bar -->
-                <div class="status-bar" id="status-bar"></div>
-
-                <!-- Task bar -->
-                <div class="task-bar" id="task-bar"></div>
-                <div class="taskbar-menu" id="taskbar-menu" style="display:none;"></div>
-
-                <!-- Welcome dialog -->
-                <div class="dialog" id="welcome-dialog" style="display:none;">
-                    <div class="window-header">
-                        <div class="window-title"></div>
-                    </div>
-                    <div class="dialog-content"></div>
-                </div>
-            </div>
-        </div>
+    <div class="menu" tabindex="0" aria-expanded="false">file
+      <div class="dropdown">
+        <button data-menu="new-note">New Note</button>
+        <button data-menu="new-canvas">New Canvas</button>
+        <button data-menu="open-files">Open File Manager</button>
+      </div>
     </div>
+    <div class="menu" tabindex="0" aria-expanded="false">view
+      <div class="dropdown">
+        <button data-menu="tile">Tile Windows</button>
+        <button data-menu="cascade">Cascade Windows</button>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="clock" aria-live="polite">--:--:--</div>
+  </div>
 
-    <script>
-        // Lightweight, optimized version of Orbit OS main script with icons removed
-        const state = { windows: [], zIndex: 5, windowCount: 0, puzzleState: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0] };
-        const desktop = document.getElementById('workspace-area');
-        const bootLoader = document.getElementById('boot-loader');
-        const bootStatus = document.getElementById('boot-status');
-        const defaultBootStatus = 'Initializing subsystems…';
+  <div class="work" id="work">
+    <!-- Desktop icons -->
+    <div class="icon" style="left:12px;top:14px" data-launch="files">
+      <div class="glyph" data-svg="folder"></div><div class="label">Desk Top</div>
+    </div>
+    <div class="icon" style="left:12px;top:98px" data-launch="note">
+      <div class="glyph" data-svg="note"></div><div class="label">Note Pad</div>
+    </div>
+    <div class="icon" style="left:12px;top:182px" data-launch="calc">
+      <div class="glyph" data-svg="calc"></div><div class="label">Calculator</div>
+    </div>
+    <div class="icon" style="left:12px;top:266px" data-launch="canvas">
+      <div class="glyph" data-svg="canvas"></div><div class="label">Canvas</div>
+    </div>
+    <div class="dock" id="dock" aria-label="Minimised Windows Dock"></div>
+  </div>
+</div>
 
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-        const ORBIT_VERSION = '0.1.3'; window.ORBIT_VERSION = ORBIT_VERSION;
+<script>
+(() => {
+  'use strict';
 
-        function setBootProgress(value, status){ if(!bootLoader) return; const clamped = Math.max(0,Math.min(1,value)); bootLoader.style.setProperty('--boot-progress', clamped); if(status) bootStatus.textContent = status }
-        function showBootLoader(status){ if(!bootLoader) return; bootLoader.style.display='flex'; void bootLoader.offsetWidth; bootLoader.classList.remove('boot-loader--hidden'); bootLoader.setAttribute('aria-hidden','false'); if(status) bootStatus.textContent = status }
-        function hideBootLoader(){ if(!bootLoader) return Promise.resolve(); if(bootLoader.classList.contains('boot-loader--hidden')){ bootLoader.style.display='none'; bootLoader.style.setProperty('--boot-progress',0); bootStatus.textContent = defaultBootStatus; bootLoader.setAttribute('aria-hidden','true'); return Promise.resolve() } bootLoader.classList.add('boot-loader--hidden'); bootLoader.setAttribute('aria-hidden','true'); return new Promise(resolve=>{ const finish=()=>{ bootLoader.style.display='none'; bootLoader.removeEventListener('transitionend',onTransitionEnd); bootLoader.style.setProperty('--boot-progress',0); bootStatus.textContent=defaultBootStatus; resolve() }; const onTransitionEnd=(e)=>{ if(e.target===bootLoader && e.propertyName==='opacity') finish() }; bootLoader.addEventListener('transitionend', onTransitionEnd); setTimeout(finish,500) }) }
+  /* ---------- Panic banner ---------- */
+  function panic(msg){
+    try{
+      const d=document.createElement('div'); d.className='panic';
+      d.textContent = 'Error: ' + (msg && (msg.stack||msg)) ;
+      document.body.appendChild(d);
+    }catch{}
+  }
+  window.addEventListener('error', e=>panic(e.error||e.message));
+  window.addEventListener('unhandledrejection', e=>panic(e.reason||'unhandled promise rejection'));
 
-        async function runBootLoaderDemo(){ if(!bootLoader) return; showBootLoader('Demonstrating Orbit OS loader…'); setBootProgress(0); const demoSteps=[{progress:.2,status:'Spinning up demo drives…',delay:380},{progress:.45,status:'Syncing color palettes…',delay:420},{progress:.7,status:'Preparing creative workspace…',delay:520},{progress:1,status:'Demo complete!',delay:620}]; for(const step of demoSteps){ await delay(step.delay); setBootProgress(step.progress, step.status) } await delay(520); await hideBootLoader() }
+  /* ---------- Safe storage ---------- */
+  function makeSafeStorage(){
+    try{ const k='__geos_test__'+Math.random(); localStorage.setItem(k,'1'); localStorage.removeItem(k); return localStorage; }
+    catch{ const mem={}; return {getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=String(v)},removeItem:k=>{delete mem[k]}}; }
+  }
+  const storage = makeSafeStorage();
 
-        function setTheme(theme){ const link = document.getElementById('theme-link'); if(theme==='retro'){ link.removeAttribute('href') } else { link.setAttribute('href', `./app-css/${theme}.css`) } localStorage.setItem('theme', theme) }
+  /* ---------- Helpers ---------- */
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const desktop=document.getElementById('work');
+  const menubar=document.querySelector('.menubar');
+  const clockEl=document.querySelector('.clock');
+  const isTouch = navigator.maxTouchPoints>0;
+  let zCounter=10;
+  let skipNextIconClick=false;
 
-        function buildMenus(menus){ const bar = document.getElementById('menu-bar'); const clock = document.getElementById('clock'); bar.innerHTML=''; menus.forEach(menu=>{ const item=document.createElement('div'); item.className='menu-item'; item.textContent=menu.label; const dropdown=document.createElement('div'); dropdown.className='dropdown'; menu.items.forEach(entry=>{ const div=document.createElement('div'); div.className='dropdown-item'; div.textContent=entry.label; if(entry.action==='set-theme' && entry.theme) div.addEventListener('click', ()=>{ setTheme(entry.theme); dropdown.style.display='none' }); else if(entry.action==='show-boot-loader') div.addEventListener('click', ()=>{ runBootLoaderDemo(); dropdown.style.display='none' }); else if(entry.type) div.addEventListener('click', ()=>{ openWindow(entry.type); dropdown.style.display='none' }); dropdown.appendChild(div) }); item.appendChild(dropdown); bar.appendChild(item) }); bar.appendChild(clock) }
+  /* ---------- SVG icons ---------- */
+  const ICONS={
+    folder:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M2 10h44v22H2z" fill="#fff" stroke="#000"/><path d="M2 10h18l3-5h12l3 5h8v4H2z" fill="#e8d39a" stroke="#000"/>
+      <path d="M2 32h44v2H2z" fill="#b9a66a"/></svg>`,
+    note:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="6" y="4" width="30" height="28" fill="#fff" stroke="#000"/>
+      <path d="M36 4v10h10" fill="#f4f4f4" stroke="#000"/>
+      <path d="M10 10h18M10 16h18M10 22h18" stroke="#6a6a6a"/>
+      <path d="M40 26l-8 6 2-9 11-11 3 3-11 11z" fill="#f2c38a" stroke="#000"/></svg>`,
+    calc:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="8" y="4" width="32" height="28" rx="2" fill="#e6eef2" stroke="#000"/>
+      <rect x="12" y="8" width="24" height="6" fill="#cfe0e8" stroke="#000"/>
+      <g fill="#fff" stroke="#000">
+        <rect x="12" y="16" width="6" height="6"/><rect x="20" y="16" width="6" height="6"/><rect x="28" y="16" width="6" height="6"/>
+        <rect x="12" y="24" width="6" height="6"/><rect x="20" y="24" width="6" height="6"/><rect x="28" y="24" width="6" height="6"/>
+      </g></svg>`,
+    canvas:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="6" y="6" width="36" height="24" fill="#fff" stroke="#000"/>
+      <path d="M6 6h36v6H6z" fill="#e8eef7" stroke="#000"/>
+      <circle cx="13" cy="9" r="2" fill="#ff4343" stroke="#000"/>
+      <circle cx="19" cy="9" r="2" fill="#ffcf33" stroke="#000"/>
+      <circle cx="25" cy="9" r="2" fill="#33cc66" stroke="#000"/>
+      <path d="M10 24c5-6 10-3 16-8 3-3 6-4 10-1" stroke="#6a6a6a" fill="none"/>
+      <path d="M35 29l6-5" stroke="#000" />
+      <path d="M41 24l-8 6 3-9 7 3z" fill="#f2c38a" stroke="#000"/>
+    </svg>`
+  };
+  $$('[data-svg]').forEach(g=>g.innerHTML=ICONS[g.dataset.svg]||'');
 
-        // removed icon-building code to keep the page lean (icons disabled)
+  /* ---------- Tiny FS ---------- */
+  const FS_KEY='geOS.fs.v1';
+  const fs = (()=> {
+    const defaults={seq:4,files:{
+      1:{id:1,name:'welcome.txt',type:'txt',content:`Welcome to geOS v0.0.3!
 
-        function saveWindowState(type, el){ if(!type) return; const windowStates = JSON.parse(localStorage.getItem('windowStates')||'{}'); windowStates[type] = { top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight }; localStorage.setItem('windowStates', JSON.stringify(windowStates)) }
+• Tap on mobile; double-click on desktop.
+• Apps: File Manager, Note Pad, Calculator, Canvas Editor.
+• Storage survives refresh (unless content://), with RAM fallback.`},
+      2:{id:2,name:'readme.txt',type:'txt',content:'Single-file retro desktop. Safe-storage wrapper enables running from content://.'},
+      3:{id:3,name:'numbers.txt',type:'txt',content:'3.14159\n2.71828\n1.61803'},
+      4:{id:4,name:'sample.png',type:'img',content:''}
+    },desktop:[1,2,3]};
+    let state; try{ state = JSON.parse(storage.getItem(FS_KEY)||'null') || defaults; }catch{ state=defaults; }
+    const save=()=>{ try{ storage.setItem(FS_KEY, JSON.stringify(state)); }catch{} };
+    return {
+      list:()=>state.desktop.map(id=>state.files[id]).filter(Boolean),
+      all:()=>Object.values(state.files),
+      newNote:(name='note.txt',content='')=>{const id=++state.seq; state.files[id]={id,name,type:'txt',content}; state.desktop.push(id); save(); return state.files[id];},
+      newImage:(name='canvas.png',dataURL='')=>{const id=++state.seq; state.files[id]={id,name,type:'img',content:dataURL}; state.desktop.push(id); save(); return state.files[id];},
+      read:id=>state.files[id],
+      write:(id,c)=>{ if(state.files[id]){ state.files[id].content=c; save(); }},
+      rename:(id,n)=>{ if(state.files[id]){ state.files[id].name=n; save(); }},
+      setType:(id,t)=>{ if(state.files[id]){ state.files[id].type=t; save(); }},
+      remove:(id)=>{ delete state.files[id]; state.desktop=state.desktop.filter(x=>x!==id); save(); },
+      reset:()=>{ try{ storage.removeItem(FS_KEY); }catch{} location.reload(); }
+    }
+  })();
 
-        function getWindowConfig(type){ if(!window.ORBIT_MANIFEST) return null; const now = new Date(); const cfg = window.ORBIT_MANIFEST.windows[type]; if(!cfg) return null; let content = cfg.content.replace(/\{DATE\}/g, now.toLocaleDateString()).replace(/\{TIME\}/g, now.toLocaleTimeString()).replace(/\{MONTH_YEAR\}/g, now.toLocaleString('default',{month:'long',year:'numeric'})); return { title: cfg.title, content, width: cfg.width, height: cfg.height } }
+  /* ---------- Window Manager ---------- */
+  const WM = (()=> {
+    const dock=document.getElementById('dock'); const windows=new Set();
+    function createWindow({title,width=360,height=220,left=80,top=70,content,appId}){
+      const el=document.createElement('div'); el.className='win opening';
+      Object.assign(el.style,{width:width+'px',height:height+'px',left:left+'px',top:top+'px'});
+      el.dataset.appId=appId||'';
+      el.innerHTML=`<div class="titlebar"><span class="title">${title}</span>
+        <div class="controls"><div class="btn" data-act="min">_</div><div class="btn" data-act="max">▢</div><div class="btn" data-act="close">×</div></div></div>
+        <div class="content"></div><div class="status"></div><div class="resize" title="Resize"></div>`;
+      desktop.appendChild(el); el.querySelector('.content').appendChild(content);
+      requestAnimationFrame(()=>el.classList.remove('opening'));
+      focus(el); enableDrag(el); enableResize(el);
+      el.addEventListener('pointerdown',()=>focus(el));
+      el.addEventListener('click',e=>{
+        const act=e.target?.dataset?.act;
+        if(act==='max') toggleMaximise(el);
+        if(act==='min') minimise(el);
+        if(act==='close') gracefulClose(el);
+      });
+      windows.add(el); return el;
+    }
+    function toggleMaximise(win){ win.classList.toggle('maximised'); }
+    function focus(win){ zCounter+=1; win.style.zIndex=String(zCounter); }
+    function bounds(el,x,y){
+      const r=el.getBoundingClientRect(); const minX=0,minY=menubar.offsetHeight;
+      const maxX=desktop.clientWidth-r.width, maxY=desktop.clientHeight-r.height;
+      return {x:clamp(x,minX,maxX),y:clamp(y,minY,maxY)};
+    }
+    function enableDrag(win){
+      const bar=win.querySelector('.titlebar');
+      bar.addEventListener('pointerdown',e=>{
+        if(e.button!==0) return;
+        const rect=win.getBoundingClientRect(); const offX=e.clientX-rect.left, offY=e.clientY-rect.top;
+        win.setPointerCapture(e.pointerId);
+        const move=ev=>{ const {x,y}=bounds(win,ev.clientX-offX,ev.clientY-offY); win.style.left=x+'px'; win.style.top=y+'px'; };
+        const up=()=>{ win.releasePointerCapture(e.pointerId); win.removeEventListener('pointermove',move); win.removeEventListener('pointerup',up); };
+        win.addEventListener('pointermove',move); win.addEventListener('pointerup',up);
+      });
+    }
+    function enableResize(win){
+      const grip=win.querySelector('.resize');
+      grip.addEventListener('pointerdown',e=>{
+        if(e.button!==0) return; win.classList.add('resizing');
+        const s=win.getBoundingClientRect(), sx=e.clientX, sy=e.clientY; win.setPointerCapture(e.pointerId);
+        const move=ev=>{ win.style.width=clamp(s.width+(ev.clientX-sx),200,desktop.clientWidth-s.left)+'px';
+                         win.style.height=clamp(s.height+(ev.clientY-sy),120,desktop.clientHeight-s.top)+'px'; };
+        const up=()=>{ win.classList.remove('resizing'); win.releasePointerCapture(e.pointerId); win.removeEventListener('pointermove',move); win.removeEventListener('pointerup',up); };
+        win.addEventListener('pointermove',move); win.addEventListener('pointerup',up);
+      });
+    }
+    function gracefulClose(win){
+      const id=win.dataset.taskId, btn=id&&document.querySelector(`[data-task="${id}"]`); btn?.remove();
+      win.classList.add('closing'); win.addEventListener('transitionend',()=>win.remove(),{once:true});
+    }
+    function minimise(win){
+      if(win.classList.contains('minimised')) return;
+      const id=Math.random().toString(36).slice(2,7); win.dataset.taskId=id;
+      const t=document.createElement('button'); t.className='task'; t.textContent=win.querySelector('.title').textContent; t.dataset.task=id;
+      t.addEventListener('click',()=>{ win.classList.remove('minimised'); t.remove(); focus(win); });
+      dock.appendChild(t); win.classList.add('minimising'); setTimeout(()=>{ win.classList.remove('minimising'); win.classList.add('minimised'); },180);
+    }
+    function tile(){ const arr=[...document.querySelectorAll('.win')]; if(!arr.length) return;
+      const cols=Math.ceil(Math.sqrt(arr.length)), rows=Math.ceil(arr.length/cols);
+      const w=Math.floor(desktop.clientWidth/cols), h=Math.floor((desktop.clientHeight-menubar.offsetHeight)/rows);
+      arr.forEach((win,i)=>{ const c=i%cols,r=Math.floor(i/cols);
+        Object.assign(win.style,{left:(c*w)+'px',top:(menubar.offsetHeight+r*h)+'px',width:(w-4)+'px',height:(h-4)+'px'});
+        win.classList.remove('maximised'); });
+    }
+    function cascade(){ let x=8,y=menubar.offsetHeight+8,step=22;
+      [...document.querySelectorAll('.win')].forEach(w=>{ Object.assign(w.style,{left:x+'px',top:y+'px',width:'420px',height:'260px'}); x+=step;y+=step; w.classList.remove('maximised');});
+    }
+    return {createWindow,tile,cascade,gracefulClose};
+  })();
 
-        function openWindow(type){ const windowConfig = getWindowConfig(type); if(!windowConfig) return; let winWidth = windowConfig.width, winHeight = windowConfig.height; if(window.innerWidth < winWidth) winWidth = window.innerWidth - 20; if(window.innerHeight < winHeight) winHeight = window.innerHeight - 40; const id = `window-${++state.windowCount}`; state.zIndex++; let top = 50 + state.windowCount*20; let left = 50 + state.windowCount*20; const viewportWidth = window.innerWidth || 1280; const viewportHeight = window.innerHeight || 720; const margin = 20; const availableWidth = Math.max(viewportWidth - margin*2, 0); const availableHeight = Math.max(viewportHeight - margin*2, 0); const minWidth = Math.min(320, Math.max(240, viewportWidth - margin)); const minHeight = Math.min(220, Math.max(200, viewportHeight - margin)); winWidth = Math.max(Math.min(winWidth, availableWidth), minWidth); winHeight = Math.max(Math.min(winHeight, availableHeight), minHeight); const maxLeft = Math.max(margin, viewportWidth - winWidth - margin); const maxTop = Math.max(margin, viewportHeight - winHeight - margin); top = Math.max(margin, Math.min(top, maxTop)); left = Math.max(margin, Math.min(left, maxLeft)); const windowHtml = `
-                <div class="window" id="${id}" data-window-type="${type}"
-                     style="top: ${top}px; left: ${left}px; width: ${winWidth}px; height: ${winHeight}px; z-index: ${state.zIndex}">
-                    <div class="window-header">
-                        <div class="window-title">${windowConfig.title}</div>
-                        <div class="window-controls">
-                            <div class="window-btn" onclick="minimizeWindow('${id}')">_</div>
-                            <div class="window-btn" onclick="maximizeWindow('${id}')">□</div>
-                            <div class="window-btn" onclick="closeWindow('${id}')">×</div>
-                        </div>
-                    </div>
-                    <div class="window-content">
-                        ${windowConfig.content}
-                    </div>
-                </div>
-            `;
-            desktop.insertAdjacentHTML('beforeend', windowHtml);
-            const winEl = document.getElementById(id);
-            winEl.classList.add('zoom-init');
-            winEl.dataset.minimized = 'false';
-            requestAnimationFrame(()=>winEl.classList.remove('zoom-init'));
-            makeDraggable(id);
-            state.windows.push(id);
-            updateTaskBar();
-            saveWindowState(type, winEl);
-            return id;
-        }
+  /* ---------- Apps ---------- */
+  function openAbout(){
+    const box=document.createElement('div');
+    box.innerHTML=`<h3 style="margin:0 0 6px">geOS — Tiny UI (v0.0.3)</h3>
+      <p style="margin:0 0 6px">Single-file retro desktop. Works from file managers (content://) via safe-storage. Includes Canvas Editor.</p>
+      <p style="margin:0">© Atlas</p>`;
+    WM.createWindow({title:'About geOS',width:320,height:160,left:120,top:80,content:box,appId:'about'});
+  }
 
-        function closeWindow(id){ const win = document.getElementById(id); if(!win) return; state.windows = state.windows.filter(w=>w!==id); updateTaskBar(); if(!win.classList.contains('zoom-out')) win.classList.add('zoom-out'); const finish=()=>{ if(win.isConnected) win.remove(); }; setTimeout(finish, 350) }
+  // File Manager with image open
+  function openFiles(){
+    const wrap=document.createElement('div'), toolbar=document.createElement('div'); toolbar.className='np-toolbar';
+    toolbar.innerHTML=`<button data-a="new">New Note</button><button data-a="canvas">New Canvas</button>
+      <button data-a="refresh">Refresh</button><button data-a="export">Export FS</button><button data-a="import">Import FS</button>`;
+    const grid=document.createElement('div'); grid.className='grid'; wrap.appendChild(toolbar); wrap.appendChild(grid);
+    function render(){ grid.innerHTML='';
+      fs.all().forEach(file=>{
+        const card=document.createElement('div'); card.className='file';
+        card.innerHTML=`<div class="row"><div class="fi"></div><div class="name">${file.name}</div></div>
+          <div class="meta">type: ${file.type} • id: ${file.id}</div>
+          <div class="row" style="margin-top:5px;gap:5px">
+            <button data-op="open">Open</button><button data-op="ren">Rename</button><button data-op="del">Delete</button></div>`;
+        card.querySelector('[data-op="open"]').onclick=()=>{ file.type==='img'?openImage(file.id):openNote(file.id); };
+        card.querySelector('[data-op="ren"]').onclick=()=>{ const n=prompt('New name:',file.name); if(n){ fs.rename(file.id,n); render(); }};
+        card.querySelector('[data-op="del"]').onclick=()=>{ if(confirm('Delete '+file.name+'?')){ fs.remove(file.id); render(); }};
+        grid.appendChild(card);
+      });
+    }
+    toolbar.addEventListener('click',(e)=>{
+      const a=e.target?.dataset?.a;
+      if(a==='new'){ const f=fs.newNote('note-'+(Date.now()%100000)+'.txt',''); render(); openNote(f.id); }
+      if(a==='canvas'){ const f=fs.newImage('canvas-'+(Date.now()%100000)+'.png',''); render(); openCanvas(f.id); }
+      if(a==='refresh'){ render(); }
+      if(a==='export'){ try{ const data=storage.getItem('geOS.fs.v1')||'{}'; const blob=new Blob([data],{type:'application/json'});
+        const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='geOS-fs.json'; a.click(); URL.revokeObjectURL(url); }catch{ alert('Export not available'); } }
+      if(a==='import'){ const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+        inp.onchange=()=>{ const f=inp.files[0]; if(!f) return; const r=new FileReader();
+          r.onload=()=>{ try{ JSON.parse(r.result); storage.setItem('geOS.fs.v1', r.result); location.reload(); }catch{ alert('Invalid file'); } };
+          r.readAsText(f); }; inp.click(); }
+    });
+    WM.createWindow({title:'Desk Top — File Manager',width:560,height:340,left:160,top:90,content:wrap,appId:'files'}); render();
+  }
 
-        function minimizeWindow(id){ const win = document.getElementById(id); if(win){ win.style.display='none'; win.dataset.minimized='true'; updateTaskBar(); } }
+  function openNote(id){
+    const file=id?fs.read(id):fs.newNote();
+    const wrap=document.createElement('div'), bar=document.createElement('div'); bar.className='np-toolbar';
+    bar.innerHTML=`<button data-a="save">Save</button><button data-a="revert">Revert</button>
+      <button data-a="wrap">Toggle Wrap</button><span style="margin-left:auto">File: <b>${file.name}</b></span>`;
+    const ta=document.createElement('textarea'); ta.className='np-area'; ta.value=file.content; wrap.appendChild(bar); wrap.appendChild(ta);
+    let wrapOn=true; bar.addEventListener('click',(e)=>{ const a=e.target?.dataset?.a;
+      if(a==='save'){ fs.write(file.id, ta.value); }
+      if(a==='revert'){ ta.value=fs.read(file.id).content; }
+      if(a==='wrap'){ wrapOn=!wrapOn; ta.style.whiteSpace=wrapOn?'pre-wrap':'pre'; }});
+    const win=WM.createWindow({title:'Note Pad — '+file.name,width:580,height:340,left:100+((Math.random()*60)|0),top:80+((Math.random()*40)|0),content:wrap,appId:'note'});
+    win.addEventListener('keydown',(e)=>{ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){ e.preventDefault(); fs.write(file.id, ta.value); }});
+    ta.focus();
+  }
 
-        function maximizeWindow(id){ const win = document.getElementById(id); if(!win) return; if(win.dataset.maximized==='true'){ win.style.width = win.dataset.initWidth + 'px'; win.style.height = win.dataset.initHeight + 'px'; win.style.top = win.dataset.initTop + 'px'; win.style.left = win.dataset.initLeft + 'px'; win.dataset.maximized='false'; } else { win.dataset.initWidth = win.offsetWidth; win.dataset.initHeight = win.offsetHeight; win.dataset.initTop = win.offsetTop; win.dataset.initLeft = win.offsetLeft; win.style.width='95%'; win.style.height='85%'; win.style.top='30px'; win.style.left='10px'; win.dataset.maximized='true'; } win.dataset.minimized='false'; win.style.zIndex = ++state.zIndex; updateTaskBar(); saveWindowState(win.dataset.windowType, win); }
+  function openImage(id){
+    const file=fs.read(id); const box=document.createElement('div');
+    box.innerHTML=`<div class="np-toolbar">
+      <button data-a="export">Export PNG</button>
+      <button data-a="edit">Edit in Canvas</button>
+      <span style="margin-left:auto">Image: <b>${file.name}</b></span></div>
+      <img alt="${file.name}" style="max-width:100%;height:auto;border:1px solid #000;image-rendering:pixelated" />`;
+    const img=box.querySelector('img'); img.src=file.content||'';
+    const win=WM.createWindow({title:'Image Viewer — '+file.name,width:520,height:360,left:220,top:110,content:box,appId:'img'});
+    box.querySelector('[data-a="export"]').onclick=()=>{ if(!file.content){ alert('Empty image'); return; }
+      const a=document.createElement('a'); a.href=file.content; a.download=file.name; a.click(); };
+    box.querySelector('[data-a="edit"]').onclick=()=>openCanvas(file.id);
+  }
 
-        function makeDraggable(windowId){ const win = document.getElementById(windowId); const header = win.querySelector('.window-header'); let pos1=0,pos2=0,pos3=0,pos4=0; header.style.touchAction='none'; header.onpointerdown = dragPointerDown; function dragPointerDown(e){ e.preventDefault(); pos3=e.clientX; pos4=e.clientY; document.onpointerup = closeDragElement; document.onpointermove = elementDrag; win.style.zIndex = ++state.zIndex } function elementDrag(e){ e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; win.style.top = (win.offsetTop - pos2) + 'px'; win.style.left = (win.offsetLeft - pos1) + 'px' } function closeDragElement(){ document.onpointerup=null; document.onpointermove=null; saveWindowState(win.dataset.windowType, win) } }
+  // Calculator
+  function openCalc(){
+    const box=document.createElement('div');
+    box.innerHTML=`<div class="calc">
+      <div class="display" id="disp">0</div>
+      <button>7</button><button>8</button><button>9</button><button>÷</button>
+      <button>4</button><button>5</button><button>6</button><button>×</button>
+      <button>1</button><button>2</button><button>3</button><button>−</button>
+      <button>0</button><button>.</button><button>=</button><button>+</button>
+    </div>`;
+    const disp=box.querySelector('#disp'); let a=null,op=null,fresh=true;
+    const get=()=>parseFloat(disp.textContent.replace(',','.'))||0; const set=v=>disp.textContent=String(v);
+    const apply=()=>{ const b=get(); if(op==='+') set(a+b); if(op==='−') set(a-b); if(op==='×') set(a*b); if(op==='÷') set(b===0?'∞':(a/b)); a=null; op=null; fresh=true; };
+    box.addEventListener('click',(e)=>{ const t=e.target; if(t.tagName!=='BUTTON') return; const v=t.textContent;
+      if(/[0-9]/.test(v)){ set(fresh?v:(disp.textContent+v)); fresh=false; return; }
+      if(v==='.') { if(!disp.textContent.includes('.')) set(disp.textContent+'.'); fresh=false; return; }
+      if(v==='='){ if(op!==null) apply(); return; }
+      if('+-−×÷'.includes(v)){ a=get(); op=v; fresh=true; }});
+    WM.createWindow({title:'Calculator',width:230,height:220,left:400,top:110,content:box,appId:'calc'});
+  }
 
-        function updateTaskBar(){ const bar = document.getElementById('task-bar'); bar.innerHTML=''; state.windows.forEach(id=>{ const win = document.getElementById(id); if(!win) return; const btn = document.createElement('div'); btn.className='task-btn'; const isMin = win.style.display==='none' || win.dataset.minimized==='true'; if(!isMin) btn.classList.add('active'); btn.textContent = win.querySelector('.window-title').textContent; btn.onclick = ()=>{ const minimized = win.style.display==='none' || win.dataset.minimized==='true'; if(minimized){ win.style.display='flex'; win.dataset.minimized='false'; win.style.zIndex = ++state.zIndex; saveWindowState(win.dataset.windowType, win) } else { minimizeWindow(id) } updateTaskBar() }; bar.appendChild(btn) }) }
+  // Canvas Editor
+  function openCanvas(id){
+    const existing = id && fs.read(id);
+    let file = existing || fs.newImage('canvas-'+(Date.now()%100000)+'.png','');
 
-        function initMenus(){ const items = document.querySelectorAll('.menu-item'); items.forEach(item=>{ const dropdown = item.querySelector('.dropdown'); if(dropdown){ item.addEventListener('click', ()=>{ document.querySelectorAll('.dropdown').forEach(d=>{ if(d!==dropdown) d.style.display='none' }); dropdown.style.display = dropdown.style.display==='block' ? 'none' : 'block' }) } }); document.addEventListener('click', (e)=>{ if(!e.target.closest('.menu-item')) document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none') }) }
+    const wrap=document.createElement('div');
+    const bar=document.createElement('div'); bar.className='ce-toolbar';
+    bar.innerHTML=`<button data-a="save">Save</button>
+      <button data-a="export">Export PNG</button>
+      <button data-a="clear">Clear</button>
+      <label>Tool:
+        <select data-a="tool">
+          <option>Pen</option><option>Eraser</option><option>Line</option><option>Rect</option>
+        </select>
+      </label>
+      <label>Size:
+        <select data-a="size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>8</option></select>
+      </label>
+      <label>Color: <input type="color" value="#000000" data-a="color"/></label>
+      <button data-a="resize">Resize</button>
+      <span style="margin-left:auto">File: <b>${file.name}</b></span>`;
+    const stage=document.createElement('div'); stage.className='ce-wrap';
+    const canvas=document.createElement('canvas'); canvas.className='ce'; canvas.width= existing?.content ? 640 : 480; canvas.height= existing?.content ? 360 : 270;
+    stage.appendChild(canvas); wrap.appendChild(bar); wrap.appendChild(stage);
 
-        function initTaskBarMenu(){ const bar = document.getElementById('task-bar'); const menu = document.getElementById('taskbar-menu'); menu.innerHTML=''; const pin = document.createElement('div'); pin.textContent='Pin Mini App'; pin.onclick = ()=>{ openWindow('mini-app'); menu.style.display='none' }; menu.appendChild(pin); bar.addEventListener('contextmenu', e=>{ e.preventDefault(); menu.style.left = e.clientX + 'px'; menu.style.display='block' }); document.addEventListener('click', ()=>{ menu.style.display='none' }) }
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(existing?.content){ const img=new Image(); img.onload=()=>{ ctx.drawImage(img,0,0); }; img.src=existing.content; }
 
-        // center-toolbar handlers
-        document.addEventListener('click', (e)=>{
-            const btn = e.target.closest && e.target.closest('.center-btn');
-            if(!btn) return;
-            const type = btn.dataset.type;
-            // prefer opening a configured window type from manifest
-            const mapping = {
-                text: 'document-editor',
-                comics: 'comic-issue-forge',
-                books: 'books-builder',
-                newspapers: 'newspapers-builder',
-                other: 'mini-app'
-            };
-            const winType = mapping[type] || type;
-            if(typeof openWindow === 'function'){
-                openWindow(winType);
-            } else {
-                alert(`Open: ${winType}`);
-            }
-        });
+    // tools
+    let tool='Pen', size=3, color='#000000', drawing=false, last=null, snapshot=null, startPt=null;
+    const setSnapshot=()=>{ snapshot=ctx.getImageData(0,0,canvas.width,canvas.height); };
+    const restore=()=>{ if(snapshot) ctx.putImageData(snapshot,0,0); };
+    function line(a,b){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineWidth=size; ctx.strokeStyle=color; ctx.lineCap='round'; ctx.stroke(); }
+    function rect(a,b){ ctx.lineWidth=size; ctx.strokeStyle=color; restore(); ctx.strokeRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(b.x-a.x),Math.abs(b.y-a.y)); }
+    const pointerPos=(ev)=>{
+      const r=canvas.getBoundingClientRect(); return {x: Math.round((ev.clientX-r.left)), y: Math.round((ev.clientY-r.top))};
+    };
+    canvas.addEventListener('pointerdown',e=>{
+      canvas.setPointerCapture(e.pointerId);
+      drawing=true; last=pointerPos(e); startPt=last;
+      if(tool==='Line'||tool==='Rect') setSnapshot();
+      if(tool==='Pen'||tool==='Eraser'){ ctx.strokeStyle= tool==='Eraser' ? '#ffffff' : color; ctx.lineWidth=size; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(last.x,last.y); }
+    });
+    canvas.addEventListener('pointermove',e=>{
+      if(!drawing) return; const p=pointerPos(e);
+      if(tool==='Pen'||tool==='Eraser'){ ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; return; }
+      if(tool==='Line'){ restore(); line(startPt,p); return; }
+      if(tool==='Rect'){ rect(startPt,p); return; }
+    });
+    canvas.addEventListener('pointerup',e=>{
+      if(!drawing) return; drawing=false; const p=pointerPos(e);
+      if(tool==='Line'){ restore(); line(startPt,p); }
+      if(tool==='Rect'){ rect(startPt,p); }
+    });
 
-        // top apps menu click -> open same types
-        document.getElementById('menu-left').addEventListener('click', (e)=>{
-            const app = e.target.closest && e.target.closest('.dropdown-item');
-            if(!app) return;
-            const type = app.dataset.app;
-            const mapping = { text: 'document-editor', comics: 'comic-issue-forge', books: 'books-builder', newspapers: 'newspapers-builder', other: 'mini-app' };
-            const winType = mapping[type] || type;
-            if(typeof openWindow === 'function') openWindow(winType);
-            // close the dropdown
-            const dd = e.target.closest('.dropdown'); if(dd) dd.style.display='none';
-        });
+    bar.addEventListener('change',(e)=>{
+      const a=e.target?.dataset?.a;
+      if(a==='tool') tool=e.target.value;
+      if(a==='size') size=parseInt(e.target.value,10)||1;
+      if(a==='color') color=e.target.value;
+    });
+    bar.addEventListener('click',(e)=>{
+      const a=e.target?.dataset?.a;
+      if(a==='save'){ try{ const data=canvas.toDataURL('image/png'); fs.write(file.id,data); fs.setType(file.id,'img'); file=fs.read(file.id); }catch{} }
+      if(a==='export'){ const data=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=data; a.download=file.name; a.click(); }
+      if(a==='clear'){ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+      if(a==='resize'){ const w=parseInt(prompt('Width px:', canvas.width)||canvas.width,10); const h=parseInt(prompt('Height px:', canvas.height)||canvas.height,10);
+        if(w>0&&h>0){ const img=ctx.getImageData(0,0,canvas.width,canvas.height); const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
+          const tctx=tmp.getContext('2d'); tctx.fillStyle='#ffffff'; tctx.fillRect(0,0,w,h);
+          const s=document.createElement('canvas'); s.width=img.width; s.height=img.height; s.getContext('2d').putImageData(img,0,0);
+          tctx.imageSmoothingEnabled=false; tctx.drawImage(s,0,0,w,h);
+          canvas.width=w; canvas.height=h; ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0); }
+      }
+      if(a==='color' || a==='size' || a==='tool'){} // handled in change
+    });
 
-        function applyCenterIconsFromManifest(icons){
-            if(!icons || !icons.length) return;
-            // mapping of our center buttons to manifest icon types
-            const mapping = { text: 'text-editor', comics: 'comic-forge', books: 'document-editor', newspapers: 'console-log', other: 'html-studio' };
-            const btns = document.querySelectorAll('#center-icons .center-btn');
-            btns.forEach(btn=>{
-                const type = btn.dataset.type;
-                const targetType = mapping[type] || type;
-                const icon = icons.find(i=>i.type === targetType);
-                const emojiEl = btn.querySelector('.center-emoji');
-                if(icon && icon.emoji){
-                    if(emojiEl) emojiEl.textContent = icon.emoji;
-                } else {
-                    // fallback if no manifest icon is found: keep existing emoji or use PDF icon
-                    if(emojiEl && !emojiEl.textContent.trim()) emojiEl.textContent = '📄';
-                }
-            });
-        }
+    WM.createWindow({title:'Canvas Editor — '+file.name,width:720,height:500,left:90,top:70,content:wrap,appId:'canvas'});
+  }
 
-        // Minimal app manifest loader
-        async function init(){ showBootLoader('Initializing video BIOS…'); setBootProgress(0.08,'Initializing video BIOS…'); setTheme('retro'); setBootProgress(0.18,'Calibrating color palette…'); try{
-            // Resolve manifest path relative to the current document to avoid broken paths
-            const manifestUrl = new URL('./app-data/app1.json', location.href).href;
-            const res = await fetch(manifestUrl);
-            // if server returned HTML (SPA fallback), this will throw when parsing JSON
-            const appData = await res.json();
-            window.ORBIT_MANIFEST = appData;
-            document.getElementById('status-bar').textContent = appData.status || '';
-            buildMenus(appData.menus || []);
-            initMenus();
-            initTaskBarMenu();
-            // Update center toolbar buttons to use icons from manifest
-            applyCenterIconsFromManifest(appData.icons || []);
-            setBootProgress(0.9,'Starting essential services…');
-            await delay(220);
-            setBootProgress(1,'Orbit OS ready!');
-            await delay(280);
-            await hideBootLoader();
-            if(appData.welcome) buildWelcome(appData.welcome);
-            openWindow('console-log');
-        }catch(err){ console.error('Failed to initialize app data', err); await hideBootLoader(); document.getElementById('status-bar').textContent = 'Failed to load system manifest'; } }
+  /* ---------- Desktop interactions ---------- */
+  function launch(id){ if(id==='files') openFiles(); if(id==='note') openNote(); if(id==='calc') openCalc(); if(id==='canvas') openCanvas(); }
+  let sel=null;
+  desktop.addEventListener('click',(e)=>{
+    if(skipNextIconClick){ skipNextIconClick=false; return; }
+    const icon=e.target.closest('.icon'); if(sel) sel.classList.remove('selected'); if(icon){ sel=icon; sel.classList.add('selected'); }
+  });
+  if(isTouch){ desktop.addEventListener('click',(e)=>{ const ico=e.target.closest('.icon'); if(ico) launch(ico.dataset.launch); }); }
+  else{ desktop.addEventListener('dblclick',(e)=>{ const ico=e.target.closest('.icon'); if(ico) launch(ico.dataset.launch); }); }
 
-        function buildWelcome(welcome){ if(!welcome) return; const dialog = document.getElementById('welcome-dialog'); dialog.querySelector('.window-title').textContent = welcome.title || ''; const content = dialog.querySelector('.dialog-content'); content.innerHTML = (welcome.lines||[]).map(l=>`<p>${l}</p>`).join(''); const buttons = document.createElement('div'); buttons.className='dialog-buttons'; const btn = document.createElement('div'); btn.className='dialog-btn'; btn.textContent = welcome.button || 'Close'; btn.onclick = ()=>closeDialog('welcome-dialog'); buttons.appendChild(btn); content.appendChild(buttons); dialog.style.display='block' }
+  function enableIconDrag(){
+    desktop.querySelectorAll('.icon').forEach(icon=>{
+      icon.addEventListener('pointerdown',e=>{
+        if(e.button!==0) return;
+        const bounds=desktop.getBoundingClientRect();
+        const r=icon.getBoundingClientRect();
+        const offX=e.clientX-r.left; const offY=e.clientY-r.top; let moved=false;
+        icon.style.cursor='grabbing';
+        icon.setPointerCapture(e.pointerId);
+        const move=ev=>{
+          const x=clamp(ev.clientX-bounds.left-offX,0,bounds.width-r.width);
+          const y=clamp(ev.clientY-bounds.top-offY,0,bounds.height-r.height);
+          icon.style.left=x+'px'; icon.style.top=y+'px'; moved=true;
+        };
+        const up=()=>{
+          icon.style.cursor='grab';
+          icon.releasePointerCapture(e.pointerId);
+          icon.removeEventListener('pointermove',move);
+          icon.removeEventListener('pointerup',up);
+          if(moved){ skipNextIconClick=true; requestAnimationFrame(()=>skipNextIconClick=false); }
+        };
+        icon.addEventListener('pointermove',move);
+        icon.addEventListener('pointerup',up);
+      });
+    });
+  }
+  enableIconDrag();
 
-        function closeDialog(id){ const el = document.getElementById(id); if(el) el.style.display='none' }
+  /* ---------- Menus ---------- */
+  for(const m of $$('.menu')){
+    m.addEventListener('click',()=>{ const open=m.getAttribute('aria-expanded')==='true';
+      $$('.menu').forEach(x=>x.setAttribute('aria-expanded','false')); m.setAttribute('aria-expanded', String(!open)); });
+    m.addEventListener('keydown',(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); m.click(); } });
+  }
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('.menu')) $$('.menu').forEach(x=>x.setAttribute('aria-expanded','false')); });
+  document.querySelectorAll('.dropdown button').forEach(b=>b.addEventListener('click',()=>{
+    const act=b.dataset.menu;
+    if(act==='about') openAbout();
+    if(act==='new-note') openNote();
+    if(act==='new-canvas') openCanvas();
+    if(act==='open-files') openFiles();
+    if(act==='shutdown') $$('.win').forEach(w=>w.remove());
+    if(act==='reset') fs.reset();
+    if(act==='tile') WM.tile();
+    if(act==='cascade') WM.cascade();
+    $$('.menu').forEach(x=>x.setAttribute('aria-expanded','false'));
+  }));
 
-        function updateViewportHeight(){ document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`) }
-        window.addEventListener('resize', updateViewportHeight); window.addEventListener('orientationchange', updateViewportHeight); updateViewportHeight(); window.onload = init;
-    </script>
-    <script src="./app-js/gui-api.js"></script>
+  /* ---------- Clock ---------- */
+  (function tick(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
+    clockEl.textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    setTimeout(tick,500);
+  })();
+
+  /* ---------- Inject SVGs ---------- */
+  $$('[data-svg]').forEach(g=>g.innerHTML=ICONS[g.dataset.svg]||'');
+})();
+</script>
 </body>
 </html>
