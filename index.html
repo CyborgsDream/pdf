@@ -268,6 +268,8 @@
       const bar=win.querySelector('.titlebar');
       bar.addEventListener('pointerdown',e=>{
         if(e.button!==0) return;
+        // Don't initiate drag when clicking the window controls
+        if(e.target?.closest('.controls')) return;
         const rect=win.getBoundingClientRect(); const offX=e.clientX-rect.left, offY=e.clientY-rect.top;
         win.setPointerCapture(e.pointerId);
         const move=ev=>{ const {x,y}=bounds(win,ev.clientX-offX,ev.clientY-offY); win.style.left=x+'px'; win.style.top=y+'px'; };
