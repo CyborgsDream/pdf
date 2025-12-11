@@ -1,6 +1,10 @@
 (function(){
   'use strict';
 
+  if(typeof document==='undefined' || !document.addEventListener){
+    return; // Skip execution in non-browser contexts.
+  }
+
   // Simple, defensive share modal helper. Elements are optional so the script
   // can be included on pages that do not render a share modal without causing
   // runtime errors.
