@@ -487,25 +487,30 @@
 
   /* ---------- KarolCo Press (Newspaper builder) ---------- */
   let pressHtmlPromise=null;
-  function pressUrl(){
-    // Build the URL based on the current document location so it also works
-    // when the site is hosted under a subpath (e.g. GitHub Pages) or behind a
-    // hash router. Avoid import.meta here because the script runs in classic
+  function pressUrls(){
+    // Build URLs based on the current document location so it also works when
+    // the site is hosted under a subpath (e.g. GitHub Pages) or behind a hash
+    // router. Avoid import.meta here because the script runs in classic
     // (non-module) mode and would fail to parse.
-    const baseUrl = new URL('./', document.baseURI);
-    return new URL('app-data/karolco-press-v0.0.10.html', baseUrl).toString();
+    const base=document.querySelector('base')?.href || document.baseURI || window.location.href;
+    const urls=[new URL('app-data/karolco-press-v0.0.10.html', new URL('./', base)).toString()];
+    const rootUrl=new URL('app-data/karolco-press-v0.0.10.html', window.location.origin+'/').toString();
+    if(!urls.includes(rootUrl)) urls.push(rootUrl);
+    return urls;
   }
   async function loadPressHtml(){
     if(!pressHtmlPromise){
       pressHtmlPromise=(async()=>{
-        try{
-          const res=await fetch(pressUrl());
-          if(!res.ok) return null;
-          return await res.text();
-        }catch(err){
-          console.warn('Failed to load press app', err);
-          return null;
+        for(const url of pressUrls()){
+          try{
+            const res=await fetch(url);
+            if(!res.ok){ console.warn('Press app missing at', url); continue; }
+            return await res.text();
+          }catch(err){
+            console.warn('Failed to load press app', err);
+          }
         }
+        return null;
       })();
     }
     return pressHtmlPromise;
