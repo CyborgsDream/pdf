@@ -488,12 +488,11 @@
   /* ---------- KarolCo Press (Newspaper builder) ---------- */
   let pressHtmlPromise=null;
   function pressUrl(){
-    // Build the URL using the current document base so it also works when the
-    // site is hosted under a subpath (e.g. GitHub Pages) or behind a hash
-    // router. Avoid using import.meta here because this script is not a
-    // module and some browsers will throw a syntax error if it is referenced.
-    const baseHref=document.baseURI || window.location.href;
-    const baseUrl=new URL(baseHref, window.location.href);
+    // Build the URL using the Vite base so it also works when the site is
+    // hosted under a subpath (e.g. GitHub Pages) or behind a hash router.
+    // import.meta.env.BASE_URL always includes a trailing slash.
+    const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/';
+    const baseUrl = new URL(base, window.location.href);
     return new URL('app-data/karolco-press-v0.0.10.html', baseUrl).toString();
   }
   async function loadPressHtml(){
