@@ -493,9 +493,14 @@
     // router. Avoid import.meta here because the script runs in classic
     // (non-module) mode and would fail to parse.
     const base=document.querySelector('base')?.href || document.baseURI || window.location.href;
-    const urls=[new URL('app-data/karolco-press-v0.0.10.html', new URL('./', base)).toString()];
-    const rootUrl=new URL('app-data/karolco-press-v0.0.10.html', window.location.origin+'/').toString();
-    if(!urls.includes(rootUrl)) urls.push(rootUrl);
+    const baseRoot=new URL('./', base);
+    const paths=[
+      'app-data/karolco-press-v0.0.10.html',
+      'public/app-data/karolco-press-v0.0.10.html', // fallback when site serves repo root directly
+    ];
+    const urls=paths.map(p=>new URL(p, baseRoot).toString());
+    const rootPaths=paths.map(p=>new URL(p, window.location.origin+'/').toString());
+    for(const url of rootPaths){ if(!urls.includes(url)) urls.push(url); }
     return urls;
   }
   async function loadPressHtml(){
