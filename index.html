@@ -487,9 +487,23 @@
 
   /* ---------- KarolCo Press (Newspaper builder) ---------- */
   let pressHtmlPromise=null;
-  function loadPressHtml(){
+  function pressUrl(){
+    const href=window.location.href;
+    const base=href.endsWith('/') ? href : href.slice(0, href.lastIndexOf('/')+1);
+    return new URL('app-data/karolco-press-v0.0.10.html', base).toString();
+  }
+  async function loadPressHtml(){
     if(!pressHtmlPromise){
-      pressHtmlPromise=fetch('app-data/karolco-press-v0.0.10.html').then(r=>r.text()).catch(()=>null);
+      pressHtmlPromise=(async()=>{
+        try{
+          const res=await fetch(pressUrl());
+          if(!res.ok) return null;
+          return await res.text();
+        }catch(err){
+          console.warn('Failed to load press app', err);
+          return null;
+        }
+      })();
     }
     return pressHtmlPromise;
   }
