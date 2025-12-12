@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+KAROLCO PRESS — FAZ-Style Broadsheet Builder
+File   : karolco-press-v0.0.10.html
+Version: 0.0.10
+Date   : 2025-11-12 (Europe/Warsaw)
+Notes  : Headings fully editable, safe empty-block restore, column-spanning images, ads, MDX export, rulers, zoom-fit.
+-->
+<head>
+  <meta charset="UTF-8" />
+  <title>KAROLCO HERALD — v0.0.10</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --page-bg: #f6f3e8;
+      --ink: #0a0a0b;
+      --accent: #6b0e17;
+      --highlight: #ff7b2f;
+      --page-width: 1180px;
+      --page-min-height: 1680px;
+      --serif: "Bodoni MT","Didot","Palatino Linotype","Book Antiqua","Times New Roman",serif;
+      --text: "Georgia","Times New Roman",serif;
+      --sidebar-width: 210px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#777;font-family:var(--text);color:var(--ink);overflow:hidden}
+    .app{display:flex;height:100vh;overflow:hidden;position:relative}
+    .sidebar{width:var(--sidebar-width);background:#141414;color:#fff;display:flex;flex-direction:column;padding:10px 8px;gap:10px;z-index:10}
+    .sidebar h1{font-size:.75rem;letter-spacing:.08em;margin:0;text-transform:uppercase}
+    .pages-list{flex:1;overflow-y:auto;gap:6px;display:flex;flex-direction:column}
+    .page-thumb{background:rgba(246,243,232,.12);border:1px solid rgba(255,255,255,.04);padding:5px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+    .page-thumb.active{border:1px solid #fff;background:rgba(246,243,232,.25)}
+    .page-thumb small{font-size:.6rem;opacity:.75}
+    .sidebar-footer{border-top:1px solid rgba(255,255,255,.05);padding-top:6px;display:flex;flex-direction:column;gap:4px}
+    .sidebar select,.sidebar button{font-size:.6rem;padding:4px 2px;border:none}
+    .sidebar button{background:#f6f3e8;color:#000;cursor:pointer}
+
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+    .toolbar{background:#111;color:#fff;padding:6px 12px;font-size:.65rem;display:flex;gap:8px;align-items:center;z-index:5;position:sticky;top:0}
+    .toolbar label{display:flex;gap:4px;align-items:center}
+    .toolbar select,.toolbar button,.toolbar input[type="range"]{font-size:.6rem;border:none}
+    .toolbar button{background:#f6f3e8;color:#000;cursor:pointer;padding:3px 8px}
+    .toolbar .spacer{flex:1}
+
+    .viewport{flex:1;overflow-y:auto;overflow-x:hidden;background:#565656;display:flex;justify-content:center}
+    .pages-zoom-wrap{transform-origin:top center}
+    .pages-container{margin:20px 0 40px;display:flex;flex-direction:column;gap:30px;align-items:center}
+    .page-wrapper{width:var(--page-width);display:flex;justify-content:center}
+    .page{background:var(--page-bg);width:var(--page-width);min-height:var(--page-min-height);padding:32px 36px 120px;box-shadow:0 0 28px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08);position:relative}
+
+    .page-ruler-top,.page-ruler-left{position:absolute;pointer-events:none;opacity:.35}
+    .page-ruler-top{top:0;left:0;right:0;height:14px;background:repeating-linear-gradient(to right,#222 0 1px,transparent 1px 20px)}
+    .page-ruler-left{top:0;left:0;bottom:0;width:14px;background:repeating-linear-gradient(to bottom,#222 0 1px,transparent 1px 20px)}
+
+    header.masthead{text-align:center;margin-bottom:14px}
+    .masthead-title{font-family:var(--serif);font-size:3.1rem;letter-spacing:.065em;font-weight:400}
+    .masthead-sub{font-size:.71rem;letter-spacing:.18em;text-transform:uppercase;margin-top:6px}
+    .dateline{display:flex;justify-content:space-between;border-top:1px solid #000;border-bottom:1px solid #000;padding:4px 0;margin-bottom:18px;font-size:.7rem}
+    .banner-headline{font-size:2.1rem;line-height:1.03;font-weight:700;margin-bottom:10px;border-bottom:1px solid #000;padding-bottom:4px}
+    .banner-sub{font-size:1rem;color:var(--accent);margin-bottom:16px;font-weight:600}
+
+    .layout-block{margin-bottom:16px;position:relative;min-height:120px;hyphens:auto}
+    .layout-block[data-cols="6"]{column-count:6;column-gap:12px}
+    .layout-block[data-cols="5"]{column-count:5;column-gap:12px}
+    .layout-block[data-cols="4"]{column-count:4;column-gap:12px}
+    .layout-block[data-cols="3"]{column-count:3;column-gap:12px}
+    .layout-block[data-cols="2"]{column-count:2;column-gap:14px}
+    .layout-block[data-cols="1"]{column-count:1}
+    .layout-block h2{font-family:var(--serif);font-size:1rem;margin:0 0 4px;letter-spacing:.02em}
+    .layout-block p{font-size:.77rem;line-height:1.38;text-align:justify;margin:0 0 6px}
+    .dropcap::first-letter{float:left;font-size:3rem;line-height:.95;padding-right:6px;padding-top:2px;font-family:var(--serif)}
+    [contenteditable="true"]:focus{outline:none}
+    .layout-block.active{outline:2px solid var(--highlight);outline-offset:4px;z-index:5}
+    .resize-handle{position:absolute;left:0;right:0;bottom:-4px;height:6px;background:rgba(255,123,47,.5);cursor:ns-resize}
+
+    .info-popup{position:absolute;top:-38px;right:0;background:#1e1e1f;color:#fff;font-size:.56rem;padding:3px 6px;border-radius:3px;display:none;gap:4px;flex-wrap:wrap;border:1px solid rgba(255,255,255,.14);white-space:nowrap}
+    .layout-block.active .info-popup{display:inline-flex}
+    .info-tag{background:rgba(255,255,255,.06);padding:1px 4px;border-radius:2px}
+
+    figure.full-span{break-inside:avoid;column-span:all;width:100%;background:#d9d2c6;border:1px solid #000;margin-bottom:10px;position:relative;min-height:180px}
+    figure.full-span figcaption{position:absolute;bottom:0;left:0;right:0;background:rgba(246,243,232,.9);font-size:.6rem;padding:3px 4px;border-top:1px solid #000}
+
+    .ad-box{border:2px double #000;background:#fef4e8;padding:6px;margin-bottom:10px;font-size:.68rem}
+    .ad-title{font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+    .ad-horiz{column-span:all;text-align:center;font-size:.7rem}
+
+    .crop-marks{position:absolute;inset:0;pointer-events:none}
+    .crop-tl,.crop-tr,.crop-bl,.crop-br{position:absolute;width:20px;height:20px}
+    .crop-tl{top:-10px;left:-10px}.crop-tr{top:-10px;right:-10px}.crop-bl{bottom:-10px;left:-10px}.crop-br{bottom:-10px;right:-10px}
+    .crop-tl::before,.crop-tr::before,.crop-bl::before,.crop-br::before,.crop-tl::after,.crop-tr::after,.crop-bl::after,.crop-br::after{content:"";position:absolute;background:#000}
+    .crop-tl::before,.crop-tr::before,.crop-bl::before,.crop-br::before{width:20px;height:1px}
+    .crop-tl::after,.crop-tr::after,.crop-bl::after,.crop-br::after{width:1px;height:20px}
+    .crop-tl::before,.crop-tl::after{left:0;top:0}
+    .crop-tr::before{right:0;top:0}.crop-tr::after{right:0;top:0}
+    .crop-bl::before{left:0;bottom:0}.crop-bl::after{left:0;bottom:0}
+    .crop-br::before{right:0;bottom:0}.crop-br::after{right:0;bottom:0}
+
+    .color-strip{position:absolute;right:10px;bottom:10px;display:flex;gap:2px;background:rgba(255,255,255,.8);padding:3px;border:1px solid rgba(0,0,0,.2)}
+    .color-swatch{width:16px;height:40px}
+    .sw-black{background:#000}.sw-cyan{background:#00a0e9}.sw-magenta{background:#e5007e}.sw-yellow{background:#ffd100}.sw-red{background:#b30000}.sw-grey1{background:#555}.sw-grey2{background:#aaa}.sw-paper{background:#f6f3e8;border:1px solid #ddd}
+
+    .export-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;justify-content:center;align-items:center;padding:20px;z-index:888}
+    .export-box{background:#fff;width:720px;max-width:100%;max-height:90vh;overflow:auto;border:1px solid #000;padding:10px}
+    .export-box textarea{width:100%;height:60vh;font-family:ui-monospace,Menlo,Monaco,Consolas,"Courier New",monospace;font-size:.7rem}
+
+    @media print{
+      .sidebar,.toolbar,.export-modal{display:none!important}
+      body{background:transparent;overflow:visible}
+      .page{margin:0;box-shadow:none;width:auto;min-height:auto;padding:20mm 15mm 25mm}
+      @page{size:A3 portrait;margin:10mm}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>Pages</h1>
+      <div class="pages-list" id="pagesList"></div>
+      <div class="sidebar-footer">
+        <label style="color:#fff;font-size:.6rem;">Quick create:</label>
+        <select id="presetCount">
+          <option value="2">2 pages</option>
+          <option value="4" selected>4 pages</option>
+          <option value="8">8 pages</option>
+          <option value="12">12 pages</option>
+          <option value="16">16 pages</option>
+          <option value="20">20 pages</option>
+          <option value="24">24 pages</option>
+          <option value="32">32 pages</option>
+        </select>
+        <button id="applyPreset">Apply</button>
+        <button id="addPage">+ Add page</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="toolbar">
+        <label>Page size:
+          <select id="pageSize">
+            <option value="a3">A3 (broadsheet-like)</option>
+            <option value="a4">A4 (compact)</option>
+            <option value="a5">A5</option>
+            <option value="uscomic">US Comic</option>
+            <option value="book">Book (6x9")</option>
+          </select>
+        </label>
+        <label>Page layout:
+          <select id="pageCols">
+            <option value="6">6 cols</option>
+            <option value="5">5 cols</option>
+            <option value="4">4 cols</option>
+            <option value="3">3 cols</option>
+            <option value="2">2 cols</option>
+            <option value="1">1 col</option>
+          </select>
+        </label>
+        <button id="addBlock">Add layout block</button>
+        <button id="exportXmd">Export MDX</button>
+        <button onclick="window.print()">Print</button>
+        <label>Zoom: <input type="range" id="zoomRange" min="50" max="140" value="100" aria-label="Zoom percentage" /></label>
+        <span id="zoomValue" aria-live="polite">100%</span>
+        <button id="zoomFit">Fit</button>
+        <span class="spacer"></span>
+        <span id="status" style="opacity:.6;">v0.0.10 — dual version banners</span>
+      </div>
+
+      <div class="viewport" id="viewport">
+        <div class="pages-zoom-wrap" id="zoomWrap">
+          <div class="pages-container" id="pagesContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export modal -->
+  <div class="export-modal" id="exportModal">
+    <div class="export-box">
+      <h3>Export: MDX (KarolCo Newspaper Markup)</h3>
+      <p style="font-size:.7rem;">Ignore tags → still readable Markdown.</p>
+      <textarea id="xmdOutput" readonly></textarea>
+      <button onclick="document.getElementById('exportModal').style.display='none'">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== Helpers =====
+    function makeLorem(paras){
+      var base="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed auctor, mi id pulvinar consectetur, nisl felis tempus tortor, vel dignissim sem arcu ut metus. ";
+      var out=""; for(var i=0;i<paras;i++){out+=base+base+"\n\n"} return out;
+    }
+    function makeBigFigure(){
+      return '<figure class="full-span" contenteditable="true"><figcaption contenteditable="true">Art Deco vectorized painting — replace with real artwork.</figcaption></figure>';
+    }
+    function makeAdBox(title,text,extraClass){
+      return '<div class="ad-box '+(extraClass||"")+'" contenteditable="true"><div class="ad-title" contenteditable="true">'+title+'</div>'+text+'</div>';
+    }
+    function defaultBlockHTML(){ return "<h2 contenteditable='true'>New Article</h2><p contenteditable='true'>"+makeLorem(1)+"</p>"; }
+    function countWords(str){ var c=str.replace(/<[^>]+>/g,"").trim(); return c?c.split(/\s+/).length:0; }
+    function countChars(str){ return str.replace(/<[^>]+>/g,"").trim().length; }
+
+    // ===== Data =====
+    var pages=[],activePageIndex=0,currentPageSize="a3";
+
+    function createShowcasePage(index){
+      var page={id:"page-"+index,title:"Page "+(index+1),cols:6,blocks:[]};
+      if(index===0){
+        page.blocks=[
+          {cols:6,content:makeBigFigure()+"<h2 contenteditable='true'>KarolCo Herald Launches Virtual Publishing House</h2><p class='dropcap' contenteditable='true'>"+makeLorem(1)+"</p><p contenteditable='true'>"+makeLorem(1)+"</p>"},
+          {cols:3,content:"<h2 contenteditable='true'>Culture Desk — 1930s Revival</h2><p contenteditable='true'>"+makeLorem(2)+"</p>"},
+          {cols:3,content:"<h2 contenteditable='true'>Tech: Browser-Native Layout</h2><p contenteditable='true'>"+makeLorem(2)+"</p>"+makeAdBox("ADVERTISEMENT","Metrix Media needs JS devs · apply today.")},
+          {cols:2,content:"<h2 contenteditable='true'>Opinion: On Layout Discipline</h2><p contenteditable='true'>"+makeLorem(1)+"</p>"},
+          {cols:2,content:"<h2 contenteditable='true'>City: Kraków–Berlin Corridor</h2><p contenteditable='true'>"+makeLorem(1)+"</p>"},
+          {cols:2,content:"<h2 contenteditable='true'>Art Deco Feature</h2><p contenteditable='true'>"+makeLorem(1)+"</p>"+makeAdBox("ADVERTISEMENT","KarolCo Printing · Premium layouts · 1930/40 styling.","ad-horiz")}
+        ];
+      } else {
+        page.blocks=[{cols:6,content:"<h2 contenteditable='true'>Article headline</h2><p contenteditable='true'>"+makeLorem(4)+"</p>"}];
+      }
+      return page;
+    }
+
+    // ===== Init / Render =====
+    function initPages(count){ pages=[]; for(var i=0;i<count;i++){pages.push(createShowcasePage(i));} activePageIndex=0; renderPagesList(); renderAllPages(); }
+    function renderPagesList(){
+      var list=document.getElementById("pagesList"); list.innerHTML="";
+      pages.forEach(function(p,i){
+        var div=document.createElement("div");
+        div.className="page-thumb"+(i===activePageIndex?" active":"");
+        div.innerHTML="<strong>"+p.title+"</strong><small>"+p.blocks.length+" block(s), "+p.cols+" cols</small>";
+        div.onclick=function(){activePageIndex=i;renderPagesList();scrollToPage(i);};
+        list.appendChild(div);
+      });
+    }
+    function scrollToPage(i){ var el=document.querySelector('[data-page-id="page-'+i+'"]'); if(el){el.scrollIntoView({behavior:"smooth",block:"start"});} }
+    function applyPageSizeToElement(el){
+      if(currentPageSize==="a3")el.style.width="1180px";
+      else if(currentPageSize==="a4")el.style.width="820px";
+      else if(currentPageSize==="a5")el.style.width="620px";
+      else if(currentPageSize==="uscomic")el.style.width="680px";
+      else if(currentPageSize==="book")el.style.width="620px";
+    }
+    function ensureChildrenEditable(blockEl){
+      blockEl.querySelectorAll("*").forEach(function(node){
+        if(!node.classList.contains("resize-handle")&&!node.classList.contains("info-popup")&&!node.classList.contains("color-strip")){
+          if(!node.hasAttribute("contenteditable")) node.setAttribute("contenteditable","true");
+        }
+      });
+    }
+
+    function renderAllPages(){
+      var container=document.getElementById("pagesContainer"); container.innerHTML="";
+      pages.forEach(function(page,idx){
+        var wrap=document.createElement("div"); wrap.className="page-wrapper"; applyPageSizeToElement(wrap);
+        var pageEl=document.createElement("div"); pageEl.className="page"; pageEl.dataset.pageId=page.id;
+        pageEl.innerHTML=
+          '<div class="page-ruler-top"></div><div class="page-ruler-left"></div>'+
+          '<div class="crop-marks"><div class="crop-tl"></div><div class="crop-tr"></div><div class="crop-bl"></div><div class="crop-br"></div></div>'+
+          '<header class="masthead"><div class="masthead-title">KAROLCO HERALD</div><div class="masthead-sub">Independent Daily for Economics, Arts and Metropolis Affairs</div></header>'+
+          '<div class="dateline"><div>No. '+(idx+1)+'</div><div>Wednesday, 12 November 2025</div><div>Price: 1.80</div></div>'+
+          '<div class="banner-headline">Edition '+(idx+1)+': Broadsheet Simulation</div>'+
+          '<div class="banner-sub">Premium retro layout · Art Deco graphics · Ad inserts</div>';
+
+        page.blocks.forEach(function(block,bi){
+          var blockEl=document.createElement("div");
+          blockEl.className="layout-block"; blockEl.setAttribute("data-cols",block.cols); blockEl.setAttribute("contenteditable","true");
+          var html=block.content||defaultBlockHTML(); blockEl.innerHTML=html; ensureChildrenEditable(blockEl);
+
+          var info=document.createElement("div"); info.className="info-popup";
+          info.innerHTML='<span class="info-tag">Pg '+(idx+1)+'</span><span class="info-tag">Blk '+(bi+1)+'</span><span class="info-tag">'+block.cols+' cols</span><span class="info-tag">words: '+countWords(html)+'</span><span class="info-tag">chars: '+countChars(html)+'</span>';
+          blockEl.appendChild(info);
+
+          var h=document.createElement("div"); h.className="resize-handle"; h.addEventListener("mousedown",function(ev){startResize(ev,blockEl);}); blockEl.appendChild(h);
+
+          blockEl.addEventListener("blur",function(){saveBlockContent(idx,bi,blockEl);});
+          blockEl.addEventListener("input",function(){saveBlockContent(idx,bi,blockEl);});
+          blockEl.addEventListener("click",function(ev){ev.stopPropagation();setActiveBlock(blockEl);});
+
+          pageEl.appendChild(blockEl);
+        });
+
+        var colorStrip=document.createElement("div"); colorStrip.className="color-strip";
+        colorStrip.innerHTML='<div class="color-swatch sw-black"></div><div class="color-swatch sw-cyan"></div><div class="color-swatch sw-magenta"></div><div class="color-swatch sw-yellow"></div><div class="color-swatch sw-red"></div><div class="color-swatch sw-grey1"></div><div class="color-swatch sw-grey2"></div><div class="color-swatch sw-paper"></div>';
+        pageEl.appendChild(colorStrip);
+
+        wrap.appendChild(pageEl); container.appendChild(wrap);
+      });
+      document.getElementById("pageCols").value=pages[activePageIndex].cols.toString();
+    }
+
+    // ===== Save & Selection =====
+    function saveBlockContent(pageIndex,blockIndex,blockEl){
+      var clone=blockEl.cloneNode(true);
+      clone.querySelectorAll(".resize-handle,.info-popup,.color-strip").forEach(function(el){el.remove();});
+      var clean=clone.innerHTML.trim();
+      if(!clean||clean==="<br>"){ clean=defaultBlockHTML(); blockEl.innerHTML=clean; ensureChildrenEditable(blockEl); }
+      pages[pageIndex].blocks[blockIndex].content=clean;
+    }
+    function setActiveBlock(el){
+      document.querySelectorAll(".layout-block.active").forEach(function(n){n.classList.remove("active");});
+      el.classList.add("active");
+    }
+
+    // ===== Export (MDX) =====
+    document.getElementById("exportXmd").addEventListener("click",function(){
+      var out=[]; out.push('[PUBLICATION name="KarolCo Herald" date="2025-11-12" pages="'+pages.length+'" size="'+currentPageSize+'"]');
+      pages.forEach(function(p,i){
+        out.push(""); out.push('[PAGE index="'+(i+1)+'" cols="'+p.cols+'"]');
+        p.blocks.forEach(function(b,bi){
+          var md=htmlToMarkdown(b.content||""); out.push(""); out.push('[BLOCK index="'+(bi+1)+'" cols="'+b.cols+'"]'); out.push(md); out.push('[/BLOCK]');
+        });
+        out.push('[/PAGE]');
+      });
+      out.push('[/PUBLICATION]');
+      var modal=document.getElementById("exportModal"), ta=document.getElementById("xmdOutput"); ta.value=out.join("\n"); modal.style.display="flex"; ta.select();
+    });
+    function htmlToMarkdown(html){
+      var t=html;
+      t=t.replace(/<div[^>]*>/gi,"\n").replace(/<\/div>/gi,"\n");
+      t=t.replace(/<h2[^>]*>(.*?)<\/h2>/gi,"## $1\n");
+      t=t.replace(/<h1[^>]*>(.*?)<\/h1>/gi,"# $1\n");
+      t=t.replace(/<p[^>]*>/gi,"").replace(/<\/p>/gi,"\n");
+      t=t.replace(/<br\s*\/?\>/gi,"\n");
+      t=t.replace(/<[^>]+>/g,"");
+      t=t.replace(/\n{3,}/g,"\n\n");
+      return t.trim();
+    }
+
+    // ===== UI controls =====
+    document.getElementById("addBlock").addEventListener("click",function(){
+      var page=pages[activePageIndex]; page.blocks.push({cols:page.cols,content:defaultBlockHTML()}); renderAllPages(); renderPagesList(); scrollToPage(activePageIndex);
+    });
+    document.getElementById("pageCols").addEventListener("change",function(e){
+      var v=parseInt(e.target.value,10); pages[activePageIndex].cols=v; renderAllPages(); renderPagesList(); scrollToPage(activePageIndex);
+    });
+    document.getElementById("addPage").addEventListener("click",function(){
+      var n=createShowcasePage(pages.length); pages.push(n); activePageIndex=pages.length-1; renderPagesList(); renderAllPages(); scrollToPage(activePageIndex);
+    });
+    document.getElementById("applyPreset").addEventListener("click",function(){
+      var c=parseInt(document.getElementById("presetCount").value,10); initPages(c); autoFit();
+    });
+    document.getElementById("pageSize").addEventListener("change",function(e){
+      currentPageSize=e.target.value; renderAllPages(); autoFit();
+    });
+
+    var zoomRange=document.getElementById("zoomRange"), zoomWrap=document.getElementById("zoomWrap"), zoomValue=document.getElementById("zoomValue");
+    function setZoom(val){
+      var v=Math.max(50,Math.min(140,parseInt(val,10)||100));
+      zoomRange.value=v;
+      zoomWrap.style.transform="scale("+(v/100)+")";
+      if(zoomValue) zoomValue.textContent=v+"%";
+    }
+    zoomRange.addEventListener("input",function(){ setZoom(zoomRange.value); });
+    document.getElementById("zoomFit").addEventListener("click",autoFit);
+    function autoFit(){
+      var vp=document.getElementById("viewport"), first=document.querySelector(".page-wrapper"); if(!first)return;
+      var vw=vp.clientWidth-30, pw=first.offsetWidth, s=Math.min(1,vw/pw);
+      setZoom(Math.round(s*100));
+    }
+
+    var resizeTimer=null;
+    window.addEventListener("resize",function(){
+      clearTimeout(resizeTimer);
+      resizeTimer=setTimeout(autoFit,120);
+    });
+
+    // ===== Drag resize =====
+    var resizing=false,startY=0,startH=0,activeBlockEl=null;
+    function startResize(ev,el){ ev.preventDefault(); resizing=true; startY=ev.clientY; startH=el.offsetHeight; activeBlockEl=el; document.addEventListener("mousemove",doResize); document.addEventListener("mouseup",stopResize); setActiveBlock(el); }
+    function doResize(ev){ if(!resizing||!activeBlockEl)return; var dy=ev.clientY-startY, h=Math.max(80,startH+dy); activeBlockEl.style.minHeight=h+"px"; }
+    function stopResize(){ resizing=false; activeBlockEl=null; document.removeEventListener("mousemove",doResize); document.removeEventListener("mouseup",stopResize); }
+
+    document.body.addEventListener("click",function(e){
+      if(!e.target.closest(".layout-block")){ document.querySelectorAll(".layout-block.active").forEach(function(n){n.classList.remove("active");}); }
+    });
+
+    // ===== Boot =====
+    initPages(4);
+    window.addEventListener("load",function(){ setTimeout(autoFit,80); });
+  </script>
+</body>
+</html>
+<!-- File: karolco-press-v0.0.10.html | Version: 0.0.10 -->
