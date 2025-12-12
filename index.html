@@ -287,9 +287,12 @@
     function toggleMaximise(win){ win.classList.toggle('maximised'); }
     function focus(win){ zCounter+=1; win.style.zIndex=String(zCounter); }
     function bounds(el,x,y){
-      const r=el.getBoundingClientRect(); const minX=0,minY=menubar.offsetHeight;
-      const maxX=desktop.clientWidth-r.width, maxY=desktop.clientHeight-r.height;
-      return {x:clamp(x,minX,maxX),y:clamp(y,minY,maxY)};
+      const r=el.getBoundingClientRect();
+      const minX=0;
+      const minY=0; // allow windows to sit flush with the top edge
+      const maxX=Math.max(minX, desktop.clientWidth - r.width);
+      const maxY=Math.max(minY, desktop.clientHeight - r.height);
+      return {x:clamp(x,minX,maxX), y:clamp(y,minY,maxY)};
     }
     function enableDrag(win){
       const bar=win.querySelector('.titlebar');
