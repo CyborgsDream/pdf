@@ -37,10 +37,11 @@ Notes  : Headings fully editable, safe empty-block restore, column-spanning imag
     .sidebar button{background:#f6f3e8;color:#000;cursor:pointer}
 
     .main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-    .toolbar{background:#111;color:#fff;padding:6px 12px;font-size:.65rem;display:flex;gap:8px;align-items:center;z-index:5}
+    .toolbar{background:#111;color:#fff;padding:6px 12px;font-size:.65rem;display:flex;gap:8px;align-items:center;z-index:5;position:sticky;top:0}
     .toolbar label{display:flex;gap:4px;align-items:center}
     .toolbar select,.toolbar button,.toolbar input[type="range"]{font-size:.6rem;border:none}
     .toolbar button{background:#f6f3e8;color:#000;cursor:pointer;padding:3px 8px}
+    .toolbar .spacer{flex:1}
 
     .viewport{flex:1;overflow-y:auto;overflow-x:hidden;background:#565656;display:flex;justify-content:center}
     .pages-zoom-wrap{transform-origin:top center}
@@ -157,8 +158,10 @@ Notes  : Headings fully editable, safe empty-block restore, column-spanning imag
         <button id="addBlock">Add layout block</button>
         <button id="exportXmd">Export MDX</button>
         <button onclick="window.print()">Print</button>
-        <label>Zoom: <input type="range" id="zoomRange" min="50" max="140" value="100" /></label>
+        <label>Zoom: <input type="range" id="zoomRange" min="50" max="140" value="100" aria-label="Zoom percentage" /></label>
+        <span id="zoomValue" aria-live="polite">100%</span>
         <button id="zoomFit">Fit</button>
+        <span class="spacer"></span>
         <span id="status" style="opacity:.6;">v0.0.10 — dual version banners</span>
       </div>
 
@@ -339,14 +342,26 @@ Notes  : Headings fully editable, safe empty-block restore, column-spanning imag
       currentPageSize=e.target.value; renderAllPages(); autoFit();
     });
 
-    var zoomRange=document.getElementById("zoomRange"), zoomWrap=document.getElementById("zoomWrap");
-    zoomRange.addEventListener("input",function(){ var v=parseInt(zoomRange.value,10); zoomWrap.style.transform="scale("+(v/100)+")"; });
+    var zoomRange=document.getElementById("zoomRange"), zoomWrap=document.getElementById("zoomWrap"), zoomValue=document.getElementById("zoomValue");
+    function setZoom(val){
+      var v=Math.max(50,Math.min(140,parseInt(val,10)||100));
+      zoomRange.value=v;
+      zoomWrap.style.transform="scale("+(v/100)+")";
+      if(zoomValue) zoomValue.textContent=v+"%";
+    }
+    zoomRange.addEventListener("input",function(){ setZoom(zoomRange.value); });
     document.getElementById("zoomFit").addEventListener("click",autoFit);
     function autoFit(){
       var vp=document.getElementById("viewport"), first=document.querySelector(".page-wrapper"); if(!first)return;
       var vw=vp.clientWidth-30, pw=first.offsetWidth, s=Math.min(1,vw/pw);
-      zoomRange.value=Math.round(s*100); zoomWrap.style.transform="scale("+s+")";
+      setZoom(Math.round(s*100));
     }
+
+    var resizeTimer=null;
+    window.addEventListener("resize",function(){
+      clearTimeout(resizeTimer);
+      resizeTimer=setTimeout(autoFit,120);
+    });
 
     // ===== Drag resize =====
     var resizing=false,startY=0,startH=0,activeBlockEl=null;
