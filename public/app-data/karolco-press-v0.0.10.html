@@ -46,7 +46,7 @@ Notes  : Headings fully editable, safe empty-block restore, column-spanning imag
     .viewport{flex:1;overflow-y:auto;overflow-x:hidden;background:#565656;display:flex;justify-content:center}
     .pages-zoom-wrap{transform-origin:top center}
     .pages-container{margin:20px 0 40px;display:flex;flex-direction:column;gap:30px;align-items:center}
-    .page-wrapper{width:var(--page-width);display:flex;justify-content:center}
+    .page-wrapper{width:var(--page-width);display:flex;justify-content:center;scroll-margin-top:32px}
     .page{background:var(--page-bg);width:var(--page-width);min-height:var(--page-min-height);padding:32px 36px 120px;box-shadow:0 0 28px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08);position:relative}
 
     .page-ruler-top,.page-ruler-left{position:absolute;pointer-events:none;opacity:.35}
@@ -231,7 +231,12 @@ Notes  : Headings fully editable, safe empty-block restore, column-spanning imag
         list.appendChild(div);
       });
     }
-    function scrollToPage(i){ var el=document.querySelector('[data-page-id="page-'+i+'"]'); if(el){el.scrollIntoView({behavior:"smooth",block:"start"});} }
+    function scrollToPage(i){
+      var el=document.querySelector('[data-page-id="page-'+i+'"]');
+      if(el){
+        el.scrollIntoView({behavior:"smooth",block:"center",inline:"nearest"});
+      }
+    }
     function applyPageSizeToElement(el){
       if(currentPageSize==="a3")el.style.width="1180px";
       else if(currentPageSize==="a4")el.style.width="820px";
