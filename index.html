@@ -121,6 +121,7 @@
         <button data-menu="new-canvas">New Canvas</button>
         <button data-menu="open-files">Open File Manager</button>
         <button data-menu="open-press">Open Press Suite</button>
+        <button data-menu="open-bookbuilder">Open BookBuilder</button>
         <button data-menu="reset">Reset Storage</button>
         <button data-menu="shutdown">Close All</button>
       </div>
@@ -131,6 +132,7 @@
         <button data-menu="new-canvas">New Canvas</button>
         <button data-menu="open-files">Open File Manager</button>
         <button data-menu="open-press">Open Press Suite</button>
+        <button data-menu="open-bookbuilder">Open BookBuilder</button>
       </div>
     </div>
     <div class="menu" tabindex="0" aria-expanded="false">view
@@ -159,6 +161,9 @@
     </div>
     <div class="icon" style="left:12px;top:350px" data-launch="press">
       <div class="glyph" data-svg="press"></div><div class="label">Press Suite</div>
+    </div>
+    <div class="icon" style="left:12px;top:434px" data-launch="bookbuilder">
+      <div class="glyph" data-svg="book"></div><div class="label">BookBuilder</div>
     </div>
     <div class="dock" id="dock" aria-label="Minimised Windows Dock"></div>
   </div>
@@ -196,6 +201,40 @@
   let zCounter=10;
   let skipNextIconClick=false;
 
+  function appUrlCandidates(filename){
+    const base=document.querySelector('base')?.href || document.baseURI || window.location.href;
+    const baseRoot=new URL('./', base);
+    const paths=[`app-data/${filename}`, `public/app-data/${filename}`];
+    const urls=paths.map(p=>new URL(p, baseRoot).toString());
+    const originRoot=new URL('./', window.location.origin+'/');
+    for(const p of paths){
+      const url=new URL(p, originRoot).toString();
+      if(!urls.includes(url)) urls.push(url);
+    }
+    return urls;
+  }
+
+  function makeHtmlLoader(filename){
+    let cache=null;
+    return async function(){
+      if(!cache){
+        cache=(async()=>{
+          for(const url of appUrlCandidates(filename)){
+            try{
+              const res=await fetch(url);
+              if(!res.ok){ console.warn(filename,'missing at', url); continue; }
+              return await res.text();
+            }catch(err){
+              console.warn('Failed to load app', filename, err);
+            }
+          }
+          return null;
+        })();
+      }
+      return cache;
+    };
+  }
+
   /* ---------- SVG icons ---------- */
   const ICONS={
     folder:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -229,6 +268,13 @@
       <path d="M8 12h20M8 16h28M8 20h24M8 24h30" stroke="#555"/>
       <rect x="30" y="12" width="10" height="10" fill="#e8d39a" stroke="#000"/>
       <path d="M30 22h10l-2 6H32z" fill="#d2e5f9" stroke="#000"/>
+    </svg>`,
+    book:`<svg viewBox="0 0 48 36" width="36" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="6" y="6" width="36" height="24" rx="2" fill="#fff" stroke="#000"/>
+      <path d="M24 6v24" stroke="#000"/>
+      <path d="M10 10h10M10 14h10M10 18h10M28 10h8M28 14h8M28 18h8" stroke="#6a6a6a"/>
+      <path d="M24 6c0 2-2 3-4 3H8" fill="none" stroke="#000"/>
+      <path d="M24 6c0 2 2 3 4 3h12" fill="none" stroke="#000"/>
     </svg>`
   };
   $$('[data-svg]').forEach(g=>g.innerHTML=ICONS[g.dataset.svg]||'');
@@ -515,41 +561,9 @@
     WM.createWindow({title:'Canvas Editor — '+file.name,width:720,height:500,left:90,top:70,content:wrap,appId:'canvas'});
   }
 
-  /* ---------- KarolCo Press (Newspaper builder) ---------- */
-  let pressHtmlPromise=null;
-  function pressUrls(){
-    // Build URLs based on the current document location so it also works when
-    // the site is hosted under a subpath (e.g. GitHub Pages) or behind a hash
-    // router. Avoid import.meta here because the script runs in classic
-    // (non-module) mode and would fail to parse.
-    const base=document.querySelector('base')?.href || document.baseURI || window.location.href;
-    const baseRoot=new URL('./', base);
-    const paths=[
-      'app-data/karolco-press-v0.0.10.html',
-      'public/app-data/karolco-press-v0.0.10.html', // fallback when site serves repo root directly
-    ];
-    const urls=paths.map(p=>new URL(p, baseRoot).toString());
-    const rootPaths=paths.map(p=>new URL(p, window.location.origin+'/').toString());
-    for(const url of rootPaths){ if(!urls.includes(url)) urls.push(url); }
-    return urls;
-  }
-  async function loadPressHtml(){
-    if(!pressHtmlPromise){
-      pressHtmlPromise=(async()=>{
-        for(const url of pressUrls()){
-          try{
-            const res=await fetch(url);
-            if(!res.ok){ console.warn('Press app missing at', url); continue; }
-            return await res.text();
-          }catch(err){
-            console.warn('Failed to load press app', err);
-          }
-        }
-        return null;
-      })();
-    }
-    return pressHtmlPromise;
-  }
+  /* ---------- External apps (Press + BookBuilder) ---------- */
+  const loadPressHtml = makeHtmlLoader('karolco-press-v0.0.10.html');
+  const loadBookBuilderHtml = makeHtmlLoader('mm-bookbuilder-v0.0.9.html');
 
   function openPress(){
     const wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;height:100%';
@@ -604,8 +618,45 @@
     loadIntoFrame();
   }
 
+  function openBookBuilder(){
+    const wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;height:100%';
+    const bar=document.createElement('div'); bar.className='np-toolbar';
+    bar.innerHTML=`<button data-a="reload">Reload</button>
+      <button data-a="popout">Open in new tab</button>
+      <span style="margin-left:auto" data-a="status">Loading BookBuilder…</span>`;
+    const iframe=document.createElement('iframe'); iframe.title='MM BookBuilder'; iframe.setAttribute('aria-label','MM BookBuilder book mock-up');
+    Object.assign(iframe.style,{flex:'1',border:'1px solid #000',background:'#111'});
+    wrap.appendChild(bar); wrap.appendChild(iframe);
+
+    WM.createWindow({title:'MM BookBuilder — Book layout',width:1080,height:760,left:120,top:70,content:wrap,appId:'bookbuilder'});
+    const status=()=>bar.querySelector('[data-a="status"]');
+
+    function setStatus(msg){ const s=status(); if(s) s.textContent=msg; }
+    function loadIntoFrame(){ setStatus('Loading BookBuilder…'); loadBookBuilderHtml().then(html=>{
+      if(!html){ setStatus('Failed to load BookBuilder'); return; }
+      iframe.srcdoc=html; setStatus('BookBuilder ready — use in-app rebuild or PDF export');
+    }); }
+
+    function popout(){
+      loadBookBuilderHtml().then(html=>{
+        if(!html){ setStatus('Cannot open in new tab (missing file)'); return; }
+        const blob=new Blob([html],{type:'text/html'}); const url=URL.createObjectURL(blob);
+        window.open(url,'_blank');
+      });
+    }
+
+    bar.addEventListener('click',(e)=>{
+      const act=e.target?.dataset?.a;
+      if(act==='reload'){ loadIntoFrame(); }
+      if(act==='popout'){ popout(); }
+    });
+
+    iframe.addEventListener('load',()=>setStatus('BookBuilder ready — use in-app rebuild or PDF export'));
+    loadIntoFrame();
+  }
+
   /* ---------- Desktop interactions ---------- */
-  function launch(id){ if(id==='files') openFiles(); if(id==='note') openNote(); if(id==='calc') openCalc(); if(id==='canvas') openCanvas(); if(id==='press') openPress(); }
+  function launch(id){ if(id==='files') openFiles(); if(id==='note') openNote(); if(id==='calc') openCalc(); if(id==='canvas') openCanvas(); if(id==='press') openPress(); if(id==='bookbuilder') openBookBuilder(); }
   let sel=null;
   desktop.addEventListener('click',(e)=>{
     if(skipNextIconClick){ skipNextIconClick=false; return; }
@@ -656,6 +707,7 @@
     if(act==='new-canvas') openCanvas();
     if(act==='open-files') openFiles();
     if(act==='open-press') openPress();
+    if(act==='open-bookbuilder') openBookBuilder();
     if(act==='shutdown') $$('.win').forEach(w=>w.remove());
     if(act==='reset') fs.reset();
     if(act==='tile') WM.tile();

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MM BookBuilder v0.0.9 — Canvas Edition (Stabilized)</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:opsz,wght@8..24,400;8..24,500;8..24,700&family=Bodoni+Moda:opsz,wght@6..96,600;6..96,800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Trim defaults (6×9 in) */
+    --trim-w-mm: 152.4; /* 6 in */
+    --trim-h-mm: 228.6; /* 9 in */
+    --bleed-mm: 3.2;    /* 0.125 in */
+
+    /* Paper + ink */
+    --paper: #fff7ec; /* cream */
+    --paper-white: #ffffff;
+    --ink: #0d0d0d;
+    --accent: #b1872e; /* simulated gold */
+
+    /* UI */
+    --ui-bg: #0b0b0c;
+    --ui-panel: #141418;
+    --ui-text: #f3f3f3;
+    --ui-muted: #bdbdbd;
+    --ui-accent: #c8a24d;
+
+    /* Typography */
+    --display: "Bodoni Moda", ui-serif, serif;
+    --text: "EB Garamond", ui-serif, serif;
+    --sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+
+    --body-pt: 11.25;      /* body point size */
+    --leading-pt: 15;      /* ~133% line-height */
+    --first-indent-mm: 6;  /* ~0.24 in */
+
+    /* Margins (mm) — generous trade */
+    --margin-top-mm: 18;   /* ~0.7 in */
+    --margin-bottom-mm: 24;/* ~0.95 in */
+    --margin-outer-mm: 18; /* ~0.7 in */
+    --margin-inner-mm: 24; /* ~0.95 in gutter */
+
+    --header-gap-mm: 10; /* space below running header */
+    --folio-gap-mm: 10;  /* space above folio line */
+  }
+
+  html,body{height:100%}
+  body{margin:0; background:var(--ui-bg); color:var(--ui-text); font-family:var(--sans); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
+
+  /* STABLE LAYOUT SHELL (matches v0.0.5 behavior) */
+  .app{display:grid; grid-template-columns: 280px 1fr; grid-template-rows: 1fr; grid-template-areas:"rail stage"; height:100vh; overflow:hidden}
+  .rail{grid-area:rail; background:var(--ui-panel); border-right:1px solid #1e1e24; display:flex; flex-direction:column; min-width:0}
+  .rail header{padding:14px; border-bottom:1px solid #1e1e24}
+  .brand{font-weight:700}
+  .muted{color:var(--ui-muted); font-size:12px}
+
+  .controls{padding:12px; overflow:auto}
+  .controls label{display:block; font-size:12px; color:#e6e6e6; margin-top:10px; margin-bottom:4px}
+  .controls select, .controls input[type="number"], .controls button{width:100%; border:1px solid #2a2a2f; background:#0e0e12; color:#fff; border-radius:8px; padding:8px 10px; font:600 12px var(--sans)}
+  .controls .row{display:grid; grid-template-columns: 1fr 1fr; gap:8px}
+  .controls .row3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px}
+  .controls button.primary{background:linear-gradient(180deg,#caa64e,#9c7c2f); color:#121212; border:none}
+  .check{display:flex; align-items:center; gap:8px; margin-top:8px}
+
+  .thumbs{padding:10px; overflow:auto; border-top:1px solid #1e1e24; flex:1; min-height:0}
+  .thumb{background:#111216; border:1px solid #2a2a33; border-radius:10px; margin-bottom:10px; display:flex; gap:10px; padding:8px; cursor:pointer}
+  .thumb .mini{position:relative; width:70px; height:100px; background:#eae7df; overflow:hidden; border-radius:6px}
+  .thumb .meta{font-size:12px}
+  .thumb:hover{outline:2px solid var(--ui-accent)}
+
+  .stage{grid-area:stage; position:relative; overflow:auto; padding:24px; background:radial-gradient(1200px 600px at 30% -10%, rgba(255,255,255,.04), transparent)}
+  .spread{display:flex; gap:24px; align-items:flex-start; justify-content:center; flex-wrap:wrap; min-height:calc(100vh - 48px)}
+
+  .page{position:relative; display:block; width: calc(var(--trim-w-mm) * 1mm + (var(--bleed-mm) * 2 * 1mm)); height: calc(var(--trim-h-mm) * 1mm + (var(--bleed-mm) * 2 * 1mm)); background:var(--paper); color:var(--ink); border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.55); overflow:hidden}
+  .page[aria-role="cover"], .page[aria-role="back-cover"]{ background:#0a0a0a; color:#f1f1f1 }
+
+  .page-inner{position:absolute; inset:0; padding:0}
+  .text-box{position:absolute; left: calc(var(--margin-outer-mm) * 1mm); right: calc(var(--margin-inner-mm) * 1mm); top: calc((var(--margin-top-mm) + var(--header-gap-mm)) * 1mm); bottom: calc((var(--margin-bottom-mm) + var(--folio-gap-mm)) * 1mm)}
+  /* Mirror margins for recto/verso */
+  .page.recto .text-box{ left: calc(var(--margin-inner-mm) * 1mm); right: calc(var(--margin-outer-mm) * 1mm) }
+  .page.verso .text-box{ left: calc(var(--margin-outer-mm) * 1mm); right: calc(var(--margin-inner-mm) * 1mm) }
+
+  .text{ font-family: var(--text); font-size: calc(var(--body-pt) * 1pt); line-height: calc(var(--leading-pt) * 1pt); hyphens:auto; text-align:justify }
+  .text p{ margin:0; text-indent: calc(var(--first-indent-mm) * 1mm); orphans:3; widows:3 }
+  .text p.noindent{ text-indent:0 }
+
+  .running-header{position:absolute; left: calc(var(--margin-outer-mm) * 1mm); right: calc(var(--margin-inner-mm) * 1mm); top: calc(var(--margin-top-mm) * 1mm); height: calc(var(--header-gap-mm) * 1mm); font: 600 9pt/1 var(--sans); letter-spacing:.04em; color:#333; display:flex; align-items:flex-end; justify-content:space-between}
+  .page.recto .running-header{ left: calc(var(--margin-inner-mm) * 1mm); right: calc(var(--margin-outer-mm) * 1mm) }
+  .page.verso .running-header{ left: calc(var(--margin-outer-mm) * 1mm); right: calc(var(--margin-inner-mm) * 1mm) }
+
+  .folio{position:absolute; left: calc(var(--margin-outer-mm) * 1mm); right: calc(var(--margin-inner-mm) * 1mm); bottom: calc(var(--margin-bottom-mm) * 1mm); height: calc(var(--folio-gap-mm) * 1mm); display:flex; align-items:flex-end; font: 600 9pt/1 var(--sans); color:#333}
+  .page.recto .folio{ left: calc(var(--margin-inner-mm) * 1mm); right: calc(var(--margin-outer-mm) * 1mm) }
+  .page.verso .folio{ left: calc(var(--margin-outer-mm) * 1mm); right: calc(var(--margin-inner-mm) * 1mm) }
+  .folio .num{ margin:auto }
+
+  /* Title page */
+  .title-stack{position:absolute; inset: 20mm; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end}
+  .title-display{font-family: var(--display); font-weight:800; font-size: 64pt; line-height:.95}
+  .title-display .rule{height:2mm; width: 40mm; background: linear-gradient(180deg,#d2b46d,#8a6a20); margin:6mm 0}
+  .subtitle{font: 600 12pt var(--sans); text-transform:uppercase; letter-spacing:.14em}
+  .imprint{font: 500 9pt var(--sans); margin-top:auto; opacity:.7}
+
+  /* Cover art */
+  .art{position:absolute; inset:0; z-index:1}
+  .cover-title{position:absolute; left:20mm; bottom:28mm; right:20mm; color:#f5f5f5; z-index:2}
+  .cover-title .headline{font-family: var(--display); font-size: 72pt; line-height:.86}
+  .cover-title .subtitle{font:600 12pt var(--sans); margin-top:6mm; letter-spacing:.16em; text-transform:uppercase; color:#d7d7d7}
+  .cover-title .byline{font:600 11pt var(--sans); margin-top:10mm; color:#d0caa8}
+
+  /* Back cover */
+  .back-grid{position:absolute; inset:20mm; display:grid; grid-template-columns: 2fr 1fr; gap:12mm; z-index:2; color:#eee}
+  .back-copy{font:500 10.5pt/1.5 var(--sans)}
+  .chip{border:1px solid #2c2c2c; border-radius:12px; padding:6px 10px; font:600 10pt var(--sans); width:max-content}
+  .barcode{width:40mm; height:25mm; background:#fff; color:#000; display:flex; align-items:center; justify-content:center; font:600 8pt var(--sans); border-radius:2mm}
+  .price{font:700 10pt var(--sans); margin-top:4mm; color:#d0caa8}
+
+  /* Guides */
+  body.show-guides .text-box{ outline:1px dashed rgba(200,162,77,.6) }
+  body.show-baselines .text{ background-image: repeating-linear-gradient(to bottom, rgba(200,162,77,.18) 0, rgba(200,162,77,.18) 1px, transparent 1px, transparent calc(var(--leading-pt) * 1pt)) }
+
+  @media print{
+    /* Stabilize print flow: stack pages, no grid/flex side effects */
+    .app{ display:block !important; height:auto !important; overflow:visible !important }
+    .stage{ overflow:visible !important; padding:0 !important }
+    .spread{ display:block !important; gap:0 !important }
+    .page{ margin:0 auto !important; border-radius:0 !important; box-shadow:none !important; page-break-after:always; break-after:page }
+    body.show-baselines .text{ background:none }
+  }
+
+  /* Print */
+  @media print{
+    .rail{display:none!important}
+    .stage{padding:0}
+    .spread{gap:0}
+    .page{border-radius:0; box-shadow:none; page-break-after:always; break-after:page}
+    *{ -webkit-print-color-adjust: exact; print-color-adjust: exact }
+  }
+  /* Print stack container */
+  #printStack{ display:block }
+  @media screen{ #printStack{ display:none } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <header>
+      <div class="brand">Metrix Media — BookBuilder <span class="muted">v0.0.9</span></div>
+      <div class="muted">Stable shell • Generous margins • Canvas thumbs</div>
+    </header>
+    <div class="controls">
+      <label>Trim size</label>
+      <select id="trim">
+        <option value="152.4,228.6">6 × 9 in (152 × 229 mm)</option>
+        <option value="139.7,215.9">5.5 × 8.5 in (Digest)</option>
+        <option value="127,203.2">5 × 8 in</option>
+        <option value="148,210">A5 (148 × 210 mm)</option>
+        <option value="156,234">Royal (156 × 234 mm)</option>
+        <option value="170,240">170 × 240 mm</option>
+        <option value="175,250">B5 (175 × 250 mm)</option>
+        <option value="177.8,254">7 × 10 in</option>
+      </select>
+      <div class="row">
+        <div>
+          <label>Paper</label>
+          <select id="paper"><option value="cream">Cream</option><option value="white">White</option></select>
+        </div>
+        <div>
+          <label>Bleed</label>
+          <select id="bleed"><option value="off">No bleed</option><option value="on">0.125 in</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Body size (pt)</label><input id="bodyPt" type="number" min="9" max="13" step="0.25" value="11.25" /></div>
+        <div><label>Leading (pt)</label><input id="leadingPt" type="number" min="12" max="20" step="0.1" value="15" /></div>
+      </div>
+      <div class="row3">
+        <div><label>Top (mm)</label><input id="mTop" type="number" value="18" step="0.5" /></div>
+        <div><label>Bottom (mm)</label><input id="mBottom" type="number" value="24" step="0.5" /></div>
+        <div><label>Outer (mm)</label><input id="mOuter" type="number" value="18" step="0.5" /></div>
+      </div>
+      <div class="row">
+        <div><label>Gutter / Inner (mm)</label><input id="mInner" type="number" value="24" step="0.5" /></div>
+        <div><label>First-line indent (mm)</label><input id="indent" type="number" value="6" step="0.5" /></div>
+      </div>
+      <div class="check"><input id="romanFront" type="checkbox" checked><label for="romanFront">Roman numerals for front matter</label></div>
+      <div class="check"><input id="showGuides" type="checkbox" checked><label for="showGuides">Show margin guides</label></div>
+      <div class="check"><input id="showBaselines" type="checkbox"><label for="showBaselines">Show baseline grid</label></div>
+      <div class="row" style="margin-top:10px"><button id="rebuild" class="primary">Rebuild mock book</button><button id="exportPdf">Export PDF</button></div>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </aside>
+
+  <main class="stage"><div class="spread" id="spread"></div></main>
+</div>
+
+<script>
+const $ = (s, el=document)=> el.querySelector(s);
+const $$ = (s, el=document)=> Array.from(el.querySelectorAll(s));
+
+const state = {
+  trim: { w: 152.4, h: 228.6 },
+  bleedOn: false,
+  paper: 'cream',
+  bodyPt: 11.25,
+  leadingPt: 15,
+  margins: { top:18, bottom:24, outer:18, inner:24 },
+  indent: 6,
+  romanFront: true,
+  pages: [],
+  bookTitle: 'THE FAT TRUE',
+  author: 'A. Metrix',
+  subtitle: 'Notes on Energy, Evidence & Appetite'
+};
+
+function setVar(name, val){ document.documentElement.style.setProperty(name, String(val)); }
+function applyCSSVars(){
+  setVar('--trim-w-mm', state.trim.w);
+  setVar('--trim-h-mm', state.trim.h);
+  setVar('--body-pt', state.bodyPt);
+  setVar('--leading-pt', state.leadingPt);
+  setVar('--margin-top-mm', state.margins.top);
+  setVar('--margin-bottom-mm', state.margins.bottom);
+  setVar('--margin-outer-mm', state.margins.outer);
+  setVar('--margin-inner-mm', state.margins.inner);
+  setVar('--first-indent-mm', state.indent);
+  setVar('--paper', state.paper==='cream' ? '#fff7ec' : '#ffffff');
+  setVar('--bleed-mm', state.bleedOn ? 3.2 : 0);
+}
+
+function pageDims(){
+  const bleed = state.bleedOn ? 3.2 : 0; return { w: state.trim.w + bleed*2, h: state.trim.h + bleed*2, bleed };
+}
+function pxFromMM(mm){ return mm * 3.7795275591; }
+
+function makePage(opts={}){
+  const { kind='text', role='', runningLeft='', runningRight='', folio='', bgLayer=null, hideHeader=false, hideFolio=false } = opts;
+  const idx = state.pages.length; // BEFORE pushing, to decide recto/verso
+  const dims = pageDims();
+
+  const page = document.createElement('div');
+  page.className = 'page ' + kind + (hideHeader? ' no-header':'') + (hideFolio? ' no-folio':'');
+  if(role) page.setAttribute('aria-role', role);
+  page.classList.add( (idx % 2 === 0) ? 'recto' : 'verso' );
+
+  const inner = document.createElement('div'); inner.className='page-inner'; page.appendChild(inner);
+
+  if(bgLayer){ const art=document.createElement('div'); art.className='art'; art.appendChild(bgLayer); inner.appendChild(art); }
+
+  const header = document.createElement('div'); header.className='running-header'; header.innerHTML = `<div>${runningLeft||''}</div><div>${runningRight||''}</div>`; inner.appendChild(header);
+
+  const textBox = document.createElement('div'); textBox.className='text-box';
+  const text = document.createElement('div'); text.className='text'; textBox.appendChild(text); inner.appendChild(textBox);
+
+  const fol = document.createElement('div'); fol.className='folio'; fol.innerHTML = `<div class="num">${folio||''}</div>`; inner.appendChild(fol);
+
+  // Size once (CSS handles mm -> pixels)
+  page.style.width = `calc(${state.trim.w}mm + ${state.bleedOn? '6.4mm':'0'})`;
+  page.style.height = `calc(${state.trim.h}mm + ${state.bleedOn? '6.4mm':'0'})`;
+
+  return { page, inner, textBox, text, header, fol };
+}
+
+function coverSVG(){
+  const svgNS = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox','0 0 1000 1500');
+  svg.innerHTML = `
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e2c56e"/>
+      <stop offset="55%" stop-color="#a9862b"/>
+      <stop offset="100%" stop-color="#5b4514"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1000" height="1500" fill="#0a0a0a"/>
+  <g fill="none" stroke="url(#gold)" stroke-width="2.5" opacity=".9">
+    <circle cx="120" cy="1400" r="380"/>
+    <circle cx="880" cy="1200" r="520" opacity=".5"/>
+  </g>`;
+  return svg;
+}
+function backSVG(){
+  const svgNS = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox','0 0 1000 1500');
+  svg.innerHTML = `<rect width="1000" height="1500" fill="#0a0a0a"/>`;
+  return svg;
+}
+
+function buildFront(){
+  const pages=[];
+  // Cover
+  {
+    const g = coverSVG();
+    const p = makePage({role:'cover', kind:'cover', bgLayer:g, hideHeader:true, hideFolio:true});
+    const title = document.createElement('div'); title.className='cover-title';
+    title.innerHTML = `<div class="headline">THE<br><strong>FAT</strong><br>TRUE</div><div class="subtitle">${state.subtitle.toUpperCase()}</div><div class="byline">by ${state.author}</div>`;
+    p.inner.appendChild(title);
+    pages.push(p.page);
+  }
+  // Title page
+  {
+    const p = makePage({hideFolio:true});
+    const box = document.createElement('div'); box.className='title-stack';
+    box.innerHTML = `<div class="title-display">THE<br>FAT<br>TRUE<div class="rule"></div></div><div class="subtitle">${state.subtitle.toUpperCase()}</div><div class="imprint">Metrix Media, ${new Date().getFullYear()}</div>`;
+    p.textBox.replaceWith(box); pages.push(p.page);
+  }
+  // Copyright
+  {
+    const p = makePage({});
+    p.text.innerHTML = `<p class="noindent">© ${new Date().getFullYear()} Metrix Media. All rights reserved.</p><p class="noindent">No part of this publication may be reproduced without permission, except brief quotations in a review.</p><p class="noindent">Printed in the United States of America.</p><p class="noindent">ISBN 978-1-4028-9462-6</p>`;
+    pages.push(p.page);
+  }
+  // Dedication
+  {
+    const p = makePage({});
+    p.text.innerHTML = `<p class="noindent" style="text-align:center; margin-top:25mm">For everyone who asks for a second source — and a second helping.</p>`;
+    pages.push(p.page);
+  }
+  // TOC placeholder (filled later)
+  {
+    const p = makePage({}); p.text.innerHTML = `<div class="text"><h3>Contents</h3></div>`; pages.push(p.page);
+  }
+  return pages;
+}
+
+function roman(n){ if(n<=0) return ''; const map=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]; let out=''; for(const [v,s] of map){ while(n>=v){ out+=s; n-=v; } } return out.toLowerCase(); }
+
+function sampleParas(){
+  const ps=[]; const base = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.`;
+  for(let i=0;i<240;i++){ const p=document.createElement('p'); if(i%22===0) p.className='dropcap noindent'; p.textContent = base + ' ' + base; ps.push(p); }
+  return ps;
+}
+
+function flow(textBox, queue){
+  const text = textBox.querySelector('.text') || textBox; let placed=0;
+  while(queue.length){
+    const node = queue[0]; text.appendChild(node);
+    if(text.scrollHeight > textBox.clientHeight){ text.removeChild(node); break; }
+    queue.shift(); placed++;
+  }
+  return placed;
+}
+
+function buildChapters(){
+  const pages=[]; const q = sampleParas();
+  const chapters = ['Preface','1. What Hunger Wants','2. Evidence, Everywhere','3. Metabolic Myths','4. The Social Stomach','5. Signals & Noise','6. Practical Heuristics'];
+  let frontRoman = state.romanFront; let romanNum = 1; let folio = 1; let toc=[];
+
+  // Preface (2 pages)
+  for(let i=0;i<2;i++){
+    const p = makePage({});
+    if(i===0){ const h=document.createElement('p'); h.className='noindent'; h.innerHTML = `<span style="font:700 22pt var(--display); letter-spacing:.02em">Preface</span>`; p.text.appendChild(h); }
+    flow(p.textBox, q); p.header.innerHTML = `<div>${state.bookTitle}</div><div>Preface</div>`; p.fol.innerHTML = `<div class="num">${frontRoman? roman(romanNum): folio}</div>`; pages.push(p.page); frontRoman? romanNum++: folio++; toc.push({title:'Preface', page: frontRoman? roman(1): '1'});
+  }
+
+  // Each chapter ~5 pages
+  for(const ch of chapters.slice(1)){
+    for(let i=0;i<5;i++){
+      const p = makePage({});
+      if(i===0){ const t=document.createElement('p'); t.className='noindent'; t.innerHTML = `<span style="font:700 22pt var(--display); letter-spacing:.02em">${ch}</span>`; p.text.appendChild(t); }
+      flow(p.textBox, q); p.header.innerHTML = `<div>${state.bookTitle}</div><div>${ch}</div>`; p.fol.innerHTML = `<div class="num">${folio}</div>`; pages.push(p.page); folio++;
+    }
+    toc.push({title: ch, page: String(folio-5)});
+  }
+
+  return { pages, toc };
+}
+
+function buildIndex(){
+  const wrap = document.createElement('div'); wrap.style.font = '500 10pt var(--sans)';
+  const terms = ['adipose tissue','appetite','basal metabolism','calorie balance','culture','evidence','glycemic load','habit formation','hormesis','insulin','leptin','metabolism','microbiome','protein leverage','recipes','satiation','sleep','thermogenesis','training','willpower'];
+  for(const term of terms){ const p=document.createElement('p'); p.className='noindent'; const pages = Array.from({length:3},()=> 1 + Math.floor(Math.random()*160)).sort((a,b)=>a-b); p.innerHTML = `<strong>${term}</strong> … ${pages.join(', ')}`; wrap.appendChild(p); }
+  return wrap;
+}
+
+function buildBack(){
+  const pages=[];
+  // Index x2
+  for(let k=0;k<2;k++){ const p= makePage({}); p.text.appendChild(buildIndex()); p.header.innerHTML = `<div>${state.bookTitle}</div><div>Index</div>`; p.fol.innerHTML = `<div class="num"></div>`; pages.push(p.page); }
+  // Colophon
+  { const p= makePage({}); p.text.innerHTML = `<p class="noindent"><strong>Typeset</strong> in EB Garamond with Bodoni Moda display, Inter captions. Body at ${state.bodyPt} / ${state.leadingPt}. Figures in SVG. Hyphenation enabled.</p>`; p.header.innerHTML = `<div>${state.bookTitle}</div><div>Colophon</div>`; pages.push(p.page); }
+  // Back cover
+  { const g = backSVG(); const p = makePage({role:'back-cover', kind:'cover', bgLayer=g, hideHeader:true, hideFolio:true});
+    const grid=document.createElement('div'); grid.className='back-grid'; grid.innerHTML = `<div class="back-copy"><p><strong>The Fat True</strong> is a lucid, wry investigation of appetite and evidence.</p><p>It’s science with a linen suit: crisp, breathable, built to last.</p></div><div><div class="barcode">ISBN 978-1-4028-9462-6</div><div class="price">US $24.00</div></div>`; p.inner.appendChild(grid); pages.push(p.page); }
+  return pages;
+}
+
+function buildThumbs(){
+  const thumbs = $('#thumbs'); thumbs.innerHTML=''; const dims = pageDims(); const scale = 0.2;
+  state.pages.forEach((pg, i)=>{
+    const item=document.createElement('div'); item.className='thumb';
+    const mini=document.createElement('div'); mini.className='mini'; const canvas=document.createElement('canvas');
+    const w = Math.round(pxFromMM(dims.w) * scale), h = Math.round(pxFromMM(dims.h) * scale); canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d');
+    const isCover = ['cover','back-cover'].includes(pg.getAttribute('aria-role'));
+    ctx.fillStyle = isCover ? '#0a0a0a' : getComputedStyle(pg).backgroundColor; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.strokeRect(0.5,0.5,w-1,h-1);
+    mini.appendChild(canvas); const meta=document.createElement('div'); meta.className='meta'; meta.innerHTML = `<div><strong>Page ${i+1}</strong></div>`; item.append(mini,meta); item.onclick=()=> pg.scrollIntoView({behavior:'smooth',block:'center'}); thumbs.appendChild(item);
+  });
+}
+
+function setPrintPageSize(){ const d=pageDims(); let tag=$('#printPageSize'); if(!tag){ tag=document.createElement('style'); tag.id='printPageSize'; tag.setAttribute('media','print'); document.head.appendChild(tag); } tag.textContent = `@page{ size: ${d.w}mm ${d.h}mm; margin:0 }`; }
+
+function rebuild(){
+  try{
+    applyCSSVars(); setPrintPageSize();
+    const spread = $('#spread'); spread.innerHTML=''; state.pages=[];
+    // Build sections
+    const front = buildFront(); front.forEach(p=> state.pages.push(p));
+    const mid = buildChapters(); mid.pages.forEach(p=> state.pages.push(p));
+    const back = buildBack(); back.forEach(p=> state.pages.push(p));
+    // Mount
+    state.pages.forEach(p=> spread.appendChild(p));
+    // Fill TOC (5th page)
+    const tocText = state.pages[4].querySelector('.text'); tocText.innerHTML='';
+    const list=document.createElement('div'); list.style.font='600 10pt var(--sans)';
+    mid.toc.forEach(t=>{ const row=document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.innerHTML = `<span>${t.title}</span><span>${t.page}</span>`; list.appendChild(row); });
+    tocText.appendChild(list);
+    buildThumbs();
+  }catch(err){ console.error(err); alert('Build error: '+err.message); }
+}
+
+// Controls
+$('#trim').addEventListener('change', e=>{ const [w,h]=e.target.value.split(',').map(parseFloat); state.trim={w,h}; rebuild(); });
+$('#paper').addEventListener('change', e=>{ state.paper=e.target.value; applyCSSVars(); });
+$('#bleed').addEventListener('change', e=>{ state.bleedOn = e.target.value==='on'; rebuild(); });
+$('#bodyPt').addEventListener('input', e=>{ state.bodyPt=parseFloat(e.target.value)||11.25; applyCSSVars(); });
+$('#leadingPt').addEventListener('input', e=>{ state.leadingPt=parseFloat(e.target.value)||15; applyCSSVars(); });
+$('#mTop').addEventListener('input', e=>{ state.margins.top=parseFloat(e.target.value)||18; applyCSSVars(); });
+$('#mBottom').addEventListener('input', e=>{ state.margins.bottom=parseFloat(e.target.value)||24; applyCSSVars(); });
+$('#mOuter').addEventListener('input', e=>{ state.margins.outer=parseFloat(e.target.value)||18; applyCSSVars(); });
+$('#mInner').addEventListener('input', e=>{ state.margins.inner=parseFloat(e.target.value)||24; applyCSSVars(); });
+$('#indent').addEventListener('input', e=>{ state.indent=parseFloat(e.target.value)||6; applyCSSVars(); });
+$('#romanFront').addEventListener('change', e=>{ state.romanFront = e.target.checked; rebuild(); });
+$('#showGuides').addEventListener('change', e=>{ document.body.classList.toggle('show-guides', e.target.checked); });
+$('#showBaselines').addEventListener('change', e=>{ document.body.classList.toggle('show-baselines', e.target.checked); });
+$('#rebuild').addEventListener('click', rebuild);
+$('#exportPdf').addEventListener('click', ()=>{
+  try{
+    setPrintPageSize();
+    const app = document.querySelector('.app');
+    const stack = document.createElement('div'); stack.id='printStack';
+    // clone each page into a clean, stacked flow for printing
+    state.pages.forEach(pg=>{
+      const clone = pg.cloneNode(true);
+      clone.style.margin = '0 auto';
+      clone.style.borderRadius = '0';
+      clone.style.boxShadow = 'none';
+      clone.style.pageBreakAfter = 'always';
+      stack.appendChild(clone);
+    });
+    document.body.appendChild(stack);
+    app.style.display='none';
+    const cleanup = ()=>{ try{ stack.remove(); }catch{} app.style.display='grid'; window.onafterprint=null; };
+    window.onafterprint = cleanup;
+    setTimeout(()=> window.print(), 50);
+  }catch(err){ console.error(err); alert('Print export error: '+err.message); }
+});
+
+// Init
+applyCSSVars(); rebuild();
+</script>
+</body>
+</html>
