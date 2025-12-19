@@ -85,6 +85,13 @@
       conic-gradient(from 45deg,#eee 0 25%,#ccc 0 50%,#eee 0 75%,#ccc 0) 0 0/12px 12px}
   .ce{display:block; background:#fff; image-rendering:pixelated; border:1px solid #000}
 
+  /* Minimalist scrollbars that match the UI trim */
+  *{scrollbar-width:thin;scrollbar-color:#8f9794 #f4f7f6}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-track{background:#f4f7f6;border:1px solid #000;box-shadow:inset 1px 1px 0 #cbd3cf}
+  *::-webkit-scrollbar-thumb{background:linear-gradient(#d5ddd9,#c0c8c4);border:1px solid #000;border-radius:10px;box-shadow:1px 1px 0 #000}
+  *::-webkit-scrollbar-thumb:hover{background:linear-gradient(#c8d1cc,#b1bab5)}
+
   /* Responsive adjustments */
   @media (max-width:900px){
     :root{--barH:28px;--fs:12px}
