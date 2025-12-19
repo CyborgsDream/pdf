@@ -199,6 +199,7 @@
   /* ---------- Helpers ---------- */
   const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const desktopRoot=document.getElementById('desktop');
   const desktop=document.getElementById('work');
   const menubar=document.querySelector('.menubar');
   const clockEl=document.querySelector('.clock');
@@ -252,12 +253,12 @@
 
   function updateMobileScrollbars(){
     if(!mobileQuery.matches){
-      desktop.classList.remove('mobile-scrollable');
-      desktop.style.setProperty('--scroll-spacer','0px');
-      desktop.style.setProperty('--scroll-extra-x','0px');
+      desktopRoot.classList.remove('mobile-scrollable');
+      desktopRoot.style.setProperty('--scroll-spacer','0px');
+      desktopRoot.style.setProperty('--scroll-extra-x','0px');
       return;
     }
-    desktop.classList.add('mobile-scrollable');
+    desktopRoot.classList.add('mobile-scrollable');
     const deskRect=desktop.getBoundingClientRect();
     let maxRight=deskRect.width;
     let maxBottom=deskRect.height;
@@ -268,8 +269,8 @@
     });
     const extraX=Math.max(0, Math.ceil(maxRight - deskRect.width + 24));
     const extraY=Math.max(0, Math.ceil(maxBottom - deskRect.height + 24));
-    desktop.style.setProperty('--scroll-extra-x', `${extraX}px`);
-    desktop.style.setProperty('--scroll-spacer', `${extraY}px`);
+    desktopRoot.style.setProperty('--scroll-extra-x', `${extraX}px`);
+    desktopRoot.style.setProperty('--scroll-spacer', `${extraY}px`);
   }
 
   mobileQuery.addEventListener('change', updateMobileScrollbars);
