@@ -94,7 +94,7 @@
   *::-webkit-scrollbar-thumb:hover{background:linear-gradient(#c8d1cc,#b1bab5)}
 
   /* Responsive adjustments */
-  @media (max-width:900px){
+  @media (max-width:900px), (pointer:coarse){
     :root{--barH:28px;--fs:12px}
     html,body{overflow:auto;font-size:12px;background:#e6ece9}
     #desktop{position:relative;overflow:auto;
@@ -216,7 +216,7 @@
   const menubar=document.querySelector('.menubar');
   const clockEl=document.querySelector('.clock');
   const isTouch = navigator.maxTouchPoints>0;
-  const mobileQuery = window.matchMedia('(max-width: 900px)');
+  const mobileQuery = window.matchMedia('(max-width: 900px), (pointer: coarse)');
   let zCounter=10;
   let skipNextIconClick=false;
   let pendingScrollFrame=null;
