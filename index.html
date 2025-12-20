@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>PDF !!!</title>
 <style>
-  :root{--bg:#dfe6e3;--ink:#000;--barH:22px;--fs:10px;--ease:cubic-bezier(.22,.61,.36,1)}
+  :root{--bg:#dfe6e3;--ink:#000;--barH:22px;--fs:10px;--ease:cubic-bezier(.22,.61,.36,1);
+    --desktop-width:1200px;--desktop-height:800px}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
     font:var(--fs)/1.15 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1px;overflow:hidden}
   #desktop{position:fixed;inset:0;display:flex;flex-direction:column;background:
@@ -96,10 +97,12 @@
   @media (max-width:900px){
     :root{--barH:28px;--fs:12px}
     html,body{overflow:auto;font-size:12px;background:#e6ece9}
-    #desktop{position:relative;overflow:auto;min-height:100vh;
+    #desktop{position:relative;overflow:auto;
+      min-width:calc(var(--desktop-width) + var(--scroll-extra-x));
+      min-height:calc(var(--desktop-height) + var(--scroll-spacer));
       background:linear-gradient(0deg,transparent 50%,rgba(0,0,0,.04) 50%) 0 0/2px 2px,
       repeating-linear-gradient(45deg,#dbe3df 0,#dbe3df 2px,#e5ede9 2px,#e5ede9 4px)}
-    #desktop::after{display:block}
+    #desktop::after{display:none}
     #desktop.mobile-scrollable{scrollbar-gutter:stable both-edges;overscroll-behavior:contain}
     .menubar{flex-wrap:wrap;gap:6px;height:auto;line-height:1.2;border-bottom-width:2px}
     .menu{padding:4px 8px;border-radius:6px;font-size:12px;background:#f7fbf9}
@@ -107,7 +110,9 @@
     .spacer{display:none}
     .clock{margin-left:auto;border-radius:6px;font-weight:600}
     .work{padding:10px 10px 70px;display:grid;gap:12px;
-      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));align-content:start;overflow:auto}
+      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));align-content:start;overflow:auto;
+      min-width:calc(var(--desktop-width) + var(--scroll-extra-x));
+      min-height:calc(var(--desktop-height) + var(--scroll-spacer))}
     .icon{position:static;width:100%;max-width:180px;margin:0 auto;text-align:center;cursor:pointer}
     .glyph{width:48px;height:40px;border-radius:8px}
     .label{font-weight:600;border-radius:8px;padding:4px 6px}
