@@ -44,7 +44,7 @@
   .win.minimised{display:none}
 
   .titlebar{-webkit-app-region:drag;user-select:none;cursor:grab;flex:0 0 auto;display:flex;align-items:center;gap:6px;
-    background:linear-gradient(#e7ecea,#d1dad6);border-bottom:1px solid #000;padding:2px 4px}
+    background:linear-gradient(#e7ecea,#d1dad6);border-bottom:1px solid #000;padding:2px 4px;touch-action:none}
   .titlebar:active{cursor:grabbing}
   .title{font-weight:bold}.controls{margin-left:auto;display:flex;gap:4px}
   .btn{width:14px;height:14px;border:1px solid #000;background:#fff;display:grid;place-items:center;cursor:default;line-height:1}
@@ -52,7 +52,7 @@
   .content{flex:1 1 auto;overflow:auto;padding:6px;background:#fff}
   .status{flex:0 0 auto;border-top:1px solid #000;background:#eef2f0;padding:2px 4px}
   .resize{position:absolute;width:12px;height:12px;right:0;bottom:0;cursor:nwse-resize;
-    background:repeating-linear-gradient(135deg,#000 0,#000 1px,transparent 1px,transparent 3px)}
+    background:repeating-linear-gradient(135deg,#000 0,#000 1px,transparent 1px,transparent 3px);touch-action:none}
   .hidden{display:none!important}
   .maximised{top:var(--barH)!important;left:0!important;width:100%!important;height:calc(100% - var(--barH))!important}
   :focus-visible{outline:1px dashed #000;outline-offset:2px}
@@ -95,10 +95,9 @@
 
   /* Responsive adjustments */
   @media (max-width:900px), (pointer:coarse){
-    :root{--barH:28px;--fs:12px}
+    :root{--barH:28px;--fs:12px;--desktop-width:100vw;--desktop-height:100vh}
     html,body{overflow:auto;font-size:12px;background:#e6ece9}
-    #desktop{position:relative;overflow:auto;
-      min-width:calc(var(--desktop-width) + var(--scroll-extra-x));
+    #desktop{position:relative;overflow:auto;width:100%;min-width:100%;
       min-height:calc(var(--desktop-height) + var(--scroll-spacer));
       background:linear-gradient(0deg,transparent 50%,rgba(0,0,0,.04) 50%) 0 0/2px 2px,
       repeating-linear-gradient(45deg,#dbe3df 0,#dbe3df 2px,#e5ede9 2px,#e5ede9 4px)}
@@ -109,11 +108,10 @@
     .dropdown{position:relative;box-shadow:none;margin-top:4px;border-radius:6px}
     .spacer{display:none}
     .clock{margin-left:auto;border-radius:6px;font-weight:600}
-    .work{padding:10px 10px 70px;display:grid;gap:12px;
+    .work{padding:10px 10px 70px;display:grid;gap:14px;
       grid-template-columns:repeat(auto-fit,minmax(120px,1fr));align-content:start;overflow:auto;
-      min-width:calc(var(--desktop-width) + var(--scroll-extra-x));
-      min-height:calc(var(--desktop-height) + var(--scroll-spacer))}
-    .icon{position:static;width:100%;max-width:180px;margin:0 auto;text-align:center;cursor:pointer}
+      width:100%;min-width:100%;min-height:calc(100vh - var(--barH) - 12px)}
+    .icon{position:static;width:100%;max-width:200px;margin:0 auto;text-align:center;cursor:pointer}
     .glyph{width:48px;height:40px;border-radius:8px}
     .label{font-weight:600;border-radius:8px;padding:4px 6px}
     .dock{position:static;width:100%;justify-content:flex-start;gap:8px;box-shadow:none;border-radius:10px}
@@ -398,6 +396,7 @@
       const bar=win.querySelector('.titlebar');
       bar.addEventListener('pointerdown',e=>{
         if(e.button!==0) return;
+        e.preventDefault();
         // Don't initiate drag when clicking the window controls
         if(e.target?.closest('.controls')) return;
         const rect=win.getBoundingClientRect(); const offX=e.clientX-rect.left, offY=e.clientY-rect.top;
@@ -410,7 +409,7 @@
     function enableResize(win){
       const grip=win.querySelector('.resize');
       grip.addEventListener('pointerdown',e=>{
-        if(e.button!==0) return; win.classList.add('resizing');
+        if(e.button!==0) return; e.preventDefault(); win.classList.add('resizing');
         const s=win.getBoundingClientRect(), sx=e.clientX, sy=e.clientY; win.setPointerCapture(e.pointerId);
         const move=ev=>{ win.style.width=clamp(s.width+(ev.clientX-sx),200,desktop.clientWidth-s.left)+'px';
                          win.style.height=clamp(s.height+(ev.clientY-sy),120,desktop.clientHeight-s.top)+'px'; scheduleMobileScrollUpdate(); };
@@ -726,6 +725,7 @@
     desktop.querySelectorAll('.icon').forEach(icon=>{
       icon.addEventListener('pointerdown',e=>{
         if(e.button!==0) return;
+        e.preventDefault();
         const bounds=desktop.getBoundingClientRect();
         const r=icon.getBoundingClientRect();
         const offX=e.clientX-r.left; const offY=e.clientY-r.top; let moved=false;
