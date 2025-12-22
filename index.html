@@ -6,7 +6,7 @@
 <title>PDF 1.0.0</title>
 <style>
   :root{--bg:#dfe6e3;--ink:#000;--barH:22px;--fs:10px;--ease:cubic-bezier(.22,.61,.36,1);
-    --desktop-width:1200px;--desktop-height:800px}
+    --desktop-width:1200px;--desktop-height:800px;--dynamic-vh:100vh}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
     font:var(--fs)/1.15 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1px;overflow:hidden}
   #desktop{position:fixed;inset:0;display:flex;flex-direction:column;background:
@@ -95,14 +95,19 @@
 
   /* Responsive adjustments */
   @media (max-width:900px), (pointer:coarse){
-    :root{--barH:28px;--fs:12px;--desktop-width:100vw;--desktop-height:100vh}
-    html,body{overflow:auto;font-size:12px;background:#e6ece9}
+    :root{--barH:28px;--fs:12px;--desktop-width:100vw;--desktop-height:var(--dynamic-vh)}
+    @supports (height: 100dvh){
+      :root{--dynamic-vh:100dvh}
+    }
+    html,body{overflow:auto;font-size:12px;background:#e6ece9;min-height:var(--dynamic-vh);
+      scrollbar-gutter:stable both-edges;overscroll-behavior:contain}
     #desktop{position:relative;overflow:auto;width:100%;min-width:100%;
       min-height:calc(var(--desktop-height) + var(--scroll-spacer));
       background:linear-gradient(0deg,transparent 50%,rgba(0,0,0,.04) 50%) 0 0/2px 2px,
-      repeating-linear-gradient(45deg,#dbe3df 0,#dbe3df 2px,#e5ede9 2px,#e5ede9 4px)}
+      repeating-linear-gradient(45deg,#dbe3df 0,#dbe3df 2px,#e5ede9 2px,#e5ede9 4px);
+      scrollbar-gutter:stable both-edges;padding-bottom:var(--scroll-spacer)}
     #desktop::after{display:none}
-    #desktop.mobile-scrollable{scrollbar-gutter:stable both-edges;overscroll-behavior:contain}
+    #desktop.mobile-scrollable{overscroll-behavior:contain}
     .menubar{flex-wrap:wrap;gap:6px;height:auto;line-height:1.2;border-bottom-width:2px}
     .menu{padding:4px 8px;border-radius:6px;font-size:12px;background:#f7fbf9}
     .dropdown{position:relative;box-shadow:none;margin-top:4px;border-radius:6px}
@@ -215,6 +220,7 @@
   const clockEl=document.querySelector('.clock');
   const isTouch = navigator.maxTouchPoints>0;
   const mobileQuery = window.matchMedia('(max-width: 900px), (pointer: coarse)');
+  const rootStyle=document.documentElement.style;
   let zCounter=10;
   let skipNextIconClick=false;
   let pendingScrollFrame=null;
@@ -261,6 +267,13 @@
     });
   }
 
+  const syncDynamicViewport=()=>{
+    const vv=window.visualViewport;
+    const vh=vv?.height || window.innerHeight;
+    rootStyle.setProperty('--dynamic-vh', `${Math.round(vh)}px`);
+    scheduleMobileScrollUpdate();
+  };
+
   function updateMobileScrollbars(){
     if(!mobileQuery.matches){
       desktopRoot.classList.remove('mobile-scrollable');
@@ -284,7 +297,9 @@
   }
 
   mobileQuery.addEventListener('change', updateMobileScrollbars);
-  window.addEventListener('resize', scheduleMobileScrollUpdate);
+  window.addEventListener('resize', syncDynamicViewport);
+  window.visualViewport?.addEventListener('resize', syncDynamicViewport);
+  syncDynamicViewport();
 
   /* ---------- SVG icons ---------- */
   const ICONS={
