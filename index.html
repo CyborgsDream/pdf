@@ -95,14 +95,15 @@
 
   /* Responsive adjustments */
   @media (max-width:900px), (pointer:coarse){
-    :root{--barH:28px;--fs:12px;--desktop-width:100vw;--desktop-height:var(--dynamic-vh)}
+    :root{--barH:28px;--fs:12px;--desktop-width:1400px;--desktop-height:1100px;--dynamic-vh:100dvh}
     @supports (height: 100dvh){
       :root{--dynamic-vh:100dvh}
     }
     html,body{overflow:auto;font-size:12px;background:#e6ece9;min-height:var(--dynamic-vh);
       scrollbar-gutter:stable both-edges;overscroll-behavior:contain}
-    #desktop{position:relative;overflow:auto;width:100%;min-width:100%;
-      min-height:calc(var(--desktop-height) + var(--scroll-spacer));
+    #desktop{position:relative;overflow:auto;width:var(--desktop-width);height:var(--desktop-height);
+      min-width:var(--desktop-width);min-height:calc(var(--desktop-height) + var(--scroll-spacer));
+      margin:0 auto;
       background:linear-gradient(0deg,transparent 50%,rgba(0,0,0,.04) 50%) 0 0/2px 2px,
       repeating-linear-gradient(45deg,#dbe3df 0,#dbe3df 2px,#e5ede9 2px,#e5ede9 4px);
       scrollbar-gutter:stable both-edges;padding-bottom:var(--scroll-spacer)}
