@@ -47,7 +47,7 @@
     background:linear-gradient(#e7ecea,#d1dad6);border-bottom:1px solid #000;padding:2px 4px;touch-action:none}
   .titlebar:active{cursor:grabbing}
   .title{font-weight:bold}.controls{margin-left:auto;display:flex;gap:4px}
-  .btn{width:14px;height:14px;border:1px solid #000;background:#fff;display:grid;place-items:center;cursor:default;line-height:1}
+  .btn{all:unset;width:16px;height:16px;border:1px solid #000;background:#fff;display:grid;place-items:center;cursor:pointer;line-height:1}
   .btn:hover{background:#cfe0ff}
   .content{flex:1 1 auto;overflow:auto;padding:6px;background:#fff}
   .status{flex:0 0 auto;border-top:1px solid #000;background:#eef2f0;padding:2px 4px}
@@ -126,7 +126,7 @@
       height:70vh;top:calc(var(--barH) + 12px)!important;min-width:auto;border-radius:14px;box-shadow:2px 6px 0 #000}
     .titlebar{border-radius:12px 12px 0 0;padding:6px 8px;gap:10px}
     .title{font-size:13px}
-    .btn{width:18px;height:18px;border-radius:6px}
+    .btn{width:22px;height:22px;border-radius:6px}
     .content{padding:10px;font-size:13px}
     .status{font-size:12px;border-radius:0 0 12px 12px}
   }
@@ -383,7 +383,11 @@
       Object.assign(el.style,{width:width+'px',height:height+'px',left:left+'px',top:top+'px'});
       el.dataset.appId=appId||'';
       el.innerHTML=`<div class="titlebar"><span class="title">${title}</span>
-        <div class="controls"><div class="btn" data-act="min">_</div><div class="btn" data-act="max">▢</div><div class="btn" data-act="close">×</div></div></div>
+        <div class="controls">
+          <button type="button" class="btn" data-act="min" aria-label="Minimise window">_</button>
+          <button type="button" class="btn" data-act="max" aria-label="Maximise window">▢</button>
+          <button type="button" class="btn" data-act="close" aria-label="Close window">×</button>
+        </div></div>
         <div class="content"></div><div class="status"></div><div class="resize" title="Resize"></div>`;
       desktop.appendChild(el); el.querySelector('.content').appendChild(content);
       requestAnimationFrame(()=>el.classList.remove('opening'));
@@ -445,6 +449,15 @@
       dock.appendChild(t); win.classList.add('minimising'); setTimeout(()=>{ win.classList.remove('minimising'); win.classList.add('minimised'); },180);
       scheduleMobileScrollUpdate();
     }
+    function topWindow(){
+      let top=null, max=-Infinity;
+      windows.forEach(win=>{
+        if(win.classList.contains('minimised')) return;
+        const z=Number(win.style.zIndex)||0;
+        if(z>=max){ max=z; top=win; }
+      });
+      return top;
+    }
     function tile(){ const arr=[...document.querySelectorAll('.win')]; if(!arr.length) return;
       const cols=Math.ceil(Math.sqrt(arr.length)), rows=Math.ceil(arr.length/cols);
       const w=Math.floor(desktop.clientWidth/cols), h=Math.floor((desktop.clientHeight-menubar.offsetHeight)/rows);
@@ -457,10 +470,17 @@
       [...document.querySelectorAll('.win')].forEach(w=>{ Object.assign(w.style,{left:x+'px',top:y+'px',width:'420px',height:'260px'}); x+=step;y+=step; w.classList.remove('maximised');});
       scheduleMobileScrollUpdate();
     }
-    return {createWindow,tile,cascade,gracefulClose};
+    return {createWindow,tile,cascade,gracefulClose,topWindow};
   })();
 
   /* ---------- Apps ---------- */
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='Escape'){
+      const top=WM.topWindow();
+      if(top){ WM.gracefulClose(top); }
+    }
+  });
+
   function openAbout(){
     const box=document.createElement('div');
     box.innerHTML=`<h3 style="margin:0 0 6px">geOS — Tiny UI (v0.0.3)</h3>
