@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terrain Lab — WebGPU Demo</title>
+  <style>
+    :root{ --bg:#0b0f1a; --panel:#101624; --accent:#7fd7ff; --ink:#f5f7fb; }
+    body{margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 "Inter", system-ui, -apple-system, sans-serif; height:100vh; display:grid; grid-template-rows:auto 1fr; overflow:hidden}
+    header{padding:10px 14px; background:var(--panel); border-bottom:1px solid #1b2435; display:flex; gap:12px; align-items:center}
+    h1{margin:0; font-size:15px; letter-spacing:0.02em}
+    .tag{padding:3px 8px; border-radius:999px; border:1px solid #26344d; background:#16203a; font-size:12px; color:#a9bbd6}
+    #viewport{position:relative; background:radial-gradient(circle at 30% 20%, rgba(127,215,255,0.1), transparent 35%), var(--bg);}
+    canvas{width:100%; height:100%; display:block}
+    .hud{position:absolute; left:12px; bottom:12px; background:rgba(16,22,36,0.82); border:1px solid #1e2b40; padding:10px 12px; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,0.35); max-width:360px}
+    .hud h2{margin:0 0 6px; font-size:14px}
+    .hud p{margin:0; color:#c7d6ed; font-size:13px}
+    .hud code{background:rgba(255,255,255,0.08); padding:2px 4px; border-radius:6px; font-size:12px}
+    button{all:unset; cursor:pointer; padding:6px 10px; border-radius:8px; border:1px solid #2c3b52; background:#16223c; color:#dce6f5; font-weight:600}
+    button:hover{background:#1f2f4c}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Terrain Lab</h1>
+      <div style="color:#9bb0cb; font-size:12px">Self-hosted Three.js WebGPU demo (no CDN dependencies).</div>
+    </div>
+    <span class="tag" id="rendererTag">Detecting renderer…</span>
+    <button id="resetCamera">Reset camera</button>
+  </header>
+  <div id="viewport">
+    <canvas id="c"></canvas>
+    <div class="hud">
+      <h2>Local modules</h2>
+      <p>This viewer uses Three.js example modules served from this site to avoid CORS errors from external CDNs.</p>
+      <p style="margin-top:8px">Controls: orbit with mouse/touch • <code>R</code> to reset view</p>
+    </div>
+  </div>
+  <script type="module">
+    import * as THREE from '../vendor/three/build/three.module.js';
+    import { OrbitControls } from '../vendor/three/examples/jsm/controls/OrbitControls.js';
+    import WebGPURenderer from '../vendor/three/examples/jsm/renderers/webgpu/WebGPURenderer.js';
+
+    const canvas=document.getElementById('c');
+    const tag=document.getElementById('rendererTag');
+    const resetBtn=document.getElementById('resetCamera');
+
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x0b0f1a);
+
+    const camera=new THREE.PerspectiveCamera(50, 2, 0.1, 2000);
+    camera.position.set(8,4,8);
+
+    let renderer;
+    async function setupRenderer(){
+      if('gpu' in navigator){
+        try{
+          const webgpu=new WebGPURenderer({canvas, antialias:true});
+          await webgpu.init();
+          renderer=webgpu;
+          tag.textContent='WebGPU';
+          tag.style.background='#123622'; tag.style.borderColor='#1c6f3e'; tag.style.color='#adf7c7';
+          return;
+        }catch(err){
+          console.warn('WebGPU init failed, falling back to WebGL', err);
+        }
+      }
+      renderer=new THREE.WebGLRenderer({canvas, antialias:true});
+      renderer.outputEncoding=THREE.sRGBEncoding;
+      tag.textContent='WebGL fallback';
+      tag.style.background='#3d2430'; tag.style.borderColor='#6c3a4f'; tag.style.color='#ffd6e9';
+    }
+
+    await setupRenderer();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+    const controls=new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0,1,0);
+    controls.enableDamping=true;
+
+    const amb=new THREE.AmbientLight(0xffffff,0.3); scene.add(amb);
+    const dir=new THREE.DirectionalLight(0xbfd8ff,1.1); dir.position.set(5,8,6); scene.add(dir);
+
+    const terrain=new THREE.Mesh(
+      new THREE.PlaneGeometry(24,24,120,120),
+      new THREE.MeshStandardMaterial({color:0x1c2d48, wireframe:true})
+    );
+    terrain.rotation.x=-Math.PI/2;
+    scene.add(terrain);
+
+    const marker=new THREE.Mesh(
+      new THREE.SphereGeometry(0.35,32,16),
+      new THREE.MeshStandardMaterial({color:0x7fd7ff, emissive:0x123f57})
+    );
+    marker.position.set(0,1,0);
+    scene.add(marker);
+
+    const clock=new THREE.Clock();
+
+    function resize(){
+      const {clientWidth:w, clientHeight:h}=canvas.parentElement;
+      if(w===0||h===0) return;
+      camera.aspect=w/h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w,h,false);
+    }
+
+    window.addEventListener('resize', resize, {passive:true});
+    resize();
+
+    function animate(){
+      const t=clock.getElapsedTime();
+      marker.position.x=Math.sin(t*0.6)*3.5;
+      marker.position.z=Math.cos(t*0.4)*3.5;
+      marker.position.y=1+Math.sin(t*1.2)*0.6;
+      controls.update();
+      renderer.render(scene,camera);
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    function resetCamera(){
+      camera.position.set(8,4,8);
+      controls.target.set(0,1,0);
+      controls.update();
+    }
+
+    resetBtn?.addEventListener('click', resetCamera);
+    window.addEventListener('keydown',(e)=>{ if(e.key==='r' || e.key==='R') resetCamera(); });
+  </script>
+</body>
+</html>
